@@ -5,14 +5,6 @@ import com.mycompany.vizsgaremek.model.Role;
 import com.mycompany.vizsgaremek.model.User;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.Produces;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PUT;
-import javax.ws.rs.core.MediaType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -128,7 +120,7 @@ public class UserService {
         String status = "success";
         Integer statusCode = 200;
 
-        ArrayList<User> modelResult = User.getAllUser();
+        ArrayList<User> modelResult = (ArrayList<User>) User.getAllUser();
         
         if(modelResult == null){
             statusCode = 500;

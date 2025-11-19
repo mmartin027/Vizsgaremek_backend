@@ -194,7 +194,7 @@ public class Vehicles implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Vehicles[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Vehicles[ id=" + id + " ]";
     }
     
 }

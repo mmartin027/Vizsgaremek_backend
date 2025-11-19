@@ -7,14 +7,15 @@ package com.mycompany.vizsgaremek.model;
 import java.io.Serializable;
 import java.util.Collection;
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -42,8 +43,8 @@ public class Features implements Serializable {
     @Size(max = 255)
     @Column(name = "name")
     private String name;
-    @ManyToMany(mappedBy = "featuresCollection")
-    private Collection<ParkingSpots> parkingSpotsCollection;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "features")
+    private Collection<ParkingSpotFeatures> parkingSpotFeaturesCollection;
 
     public Features() {
     }
@@ -69,12 +70,12 @@ public class Features implements Serializable {
     }
 
     @XmlTransient
-    public Collection<ParkingSpots> getParkingSpotsCollection() {
-        return parkingSpotsCollection;
+    public Collection<ParkingSpotFeatures> getParkingSpotFeaturesCollection() {
+        return parkingSpotFeaturesCollection;
     }
 
-    public void setParkingSpotsCollection(Collection<ParkingSpots> parkingSpotsCollection) {
-        this.parkingSpotsCollection = parkingSpotsCollection;
+    public void setParkingSpotFeaturesCollection(Collection<ParkingSpotFeatures> parkingSpotFeaturesCollection) {
+        this.parkingSpotFeaturesCollection = parkingSpotFeaturesCollection;
     }
 
     @Override
@@ -99,7 +100,7 @@ public class Features implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Features[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Features[ id=" + id + " ]";
     }
     
 }

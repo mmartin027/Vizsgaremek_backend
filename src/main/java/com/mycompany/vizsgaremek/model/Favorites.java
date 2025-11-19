@@ -119,7 +119,7 @@ public class Favorites implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Favorites[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Favorites[ id=" + id + " ]";
     }
     
 }

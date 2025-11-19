@@ -96,7 +96,7 @@ public class UserXRole implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.UserXRole[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.UserXRole[ id=" + id + " ]";
     }
     
 }

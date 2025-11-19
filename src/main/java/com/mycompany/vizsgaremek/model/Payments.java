@@ -206,7 +206,7 @@ public class Payments implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Payments[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Payments[ id=" + id + " ]";
     }
     
 }

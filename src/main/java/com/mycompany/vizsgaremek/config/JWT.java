@@ -1,5 +1,6 @@
 package com.mycompany.vizsgaremek.config;
 
+import com.mycompany.vizsgaremek.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;

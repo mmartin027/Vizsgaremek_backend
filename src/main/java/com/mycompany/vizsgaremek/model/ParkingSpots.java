@@ -9,15 +9,14 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.Lob;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -122,11 +121,6 @@ public class ParkingSpots implements Serializable {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
-    @JoinTable(name = "parking_spot_features", joinColumns = {
-        @JoinColumn(name = "parking_spot_id", referencedColumnName = "id")}, inverseJoinColumns = {
-        @JoinColumn(name = "feature_id", referencedColumnName = "id")})
-    @ManyToMany
-    private Collection<Features> featuresCollection;
     @OneToMany(mappedBy = "parkingSpotId")
     private Collection<Favorites> favoritesCollection;
     @OneToMany(mappedBy = "parkingSpotId")
@@ -134,6 +128,8 @@ public class ParkingSpots implements Serializable {
     @JoinColumn(name = "city_id", referencedColumnName = "id")
     @ManyToOne
     private Cities cityId;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parkingSpots")
+    private Collection<ParkingSpotFeatures> parkingSpotFeaturesCollection;
 
     public ParkingSpots() {
     }
@@ -317,15 +313,6 @@ public class ParkingSpots implements Serializable {
     }
 
     @XmlTransient
-    public Collection<Features> getFeaturesCollection() {
-        return featuresCollection;
-    }
-
-    public void setFeaturesCollection(Collection<Features> featuresCollection) {
-        this.featuresCollection = featuresCollection;
-    }
-
-    @XmlTransient
     public Collection<Favorites> getFavoritesCollection() {
         return favoritesCollection;
     }
@@ -351,6 +338,15 @@ public class ParkingSpots implements Serializable {
         this.cityId = cityId;
     }
 
+    @XmlTransient
+    public Collection<ParkingSpotFeatures> getParkingSpotFeaturesCollection() {
+        return parkingSpotFeaturesCollection;
+    }
+
+    public void setParkingSpotFeaturesCollection(Collection<ParkingSpotFeatures> parkingSpotFeaturesCollection) {
+        this.parkingSpotFeaturesCollection = parkingSpotFeaturesCollection;
+    }
+
     @Override
     public int hashCode() {
         int hash = 0;
@@ -373,7 +369,7 @@ public class ParkingSpots implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.ParkingSpots[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.ParkingSpots[ id=" + id + " ]";
     }
     
 }

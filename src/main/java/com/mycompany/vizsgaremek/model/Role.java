@@ -152,7 +152,7 @@ public class Role implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Role[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Role[ id=" + id + " ]";
     }
     
 }

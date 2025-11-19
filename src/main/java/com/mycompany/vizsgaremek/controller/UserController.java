@@ -4,9 +4,9 @@
  */
 package com.mycompany.vizsgaremek.controller;
 
-import com.mycompany.vizsgarmek.config.JWT;
-import com.mycompany.vizsgarmek.model.User;
-import com.mycompany.vizsgarmek.service.UserService;
+import com.mycompany.vizsgaremek.config.JWT;
+import com.mycompany.vizsgaremek.model.User;
+import com.mycompany.vizsgaremek.service.UserService;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.Produces;

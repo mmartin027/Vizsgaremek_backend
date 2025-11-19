@@ -185,7 +185,7 @@ public class ParkingSpaces implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.ParkingSpaces[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.ParkingSpaces[ id=" + id + " ]";
     }
     
 }

@@ -5,12 +5,16 @@
 package com.mycompany.vizsgaremek.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -18,6 +22,7 @@ import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Persistence;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -52,6 +57,9 @@ import javax.xml.bind.annotation.XmlTransient;
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
@@ -150,6 +158,101 @@ public class User implements Serializable {
         this.regToken = regToken;
     }
 
+    public User(String firstName, String lastName, String email, String password, String phone) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.phone = phone;
+    }
+
+    
+    
+    public User(Integer id,String firstName, String lastName, String email, String phone) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phone = phone;
+    }
+
+    public User(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
+
+    
+    public static boolean registerUser(User registeredUser) {
+    EntityManagerFactory emf = Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+    EntityManager em = emf.createEntityManager();
+
+    try {
+        em.getTransaction().begin();
+        em.persist(registeredUser);
+        em.getTransaction().commit();
+        return true;
+
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        if (em.getTransaction().isActive()) {
+            em.getTransaction().rollback();
+        }
+        return false;
+
+    } finally {
+        em.close();
+        emf.close();
+    }
+}
+    public static boolean updateUser(User updatedUser){
+         EntityManagerFactory emf = Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+    EntityManager em = emf.createEntityManager();
+    try {
+        em.getTransaction().begin();
+        em.merge(updatedUser);
+        em.getTransaction().commit();
+        return true;
+    } catch(Exception ex) {
+        ex.printStackTrace();
+        if(em.getTransaction().isActive()) em.getTransaction().rollback();
+        return false;
+    } finally {
+        em.close();
+        emf.close();
+    }
+    }
+    
+ public static List<User> getAllUser() {
+    EntityManagerFactory emf = Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+    EntityManager em = emf.createEntityManager();
+    try {
+        return em.createQuery("SELECT u FROM User u", User.class).getResultList();
+    } finally {
+        em.close();
+        emf.close();
+    }
+}
+
+    
+public static User login(User email ){
+    EntityManagerFactory emf = Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+    EntityManager em = emf.createEntityManager();
+    try {
+        return em.createQuery("SELECT u FROM User u WHERE u.email = :email AND u.password = :pwd", User.class)
+                 .setParameter("email", email)
+                 .setParameter("pwd", password)
+                 .getSingleResult();
+    } catch(Exception ex) {
+        return null;
+    } finally {
+        em.close();
+        emf.close();
+    }
+}
+
+    
+    
+    
     public Integer getId() {
         return id;
     }
@@ -337,7 +440,11 @@ public class User implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.User[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.User[ id=" + id + " ]";
     }
+
+    
+
+   
     
 }

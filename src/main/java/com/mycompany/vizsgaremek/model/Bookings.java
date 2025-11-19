@@ -333,7 +333,7 @@ public class Bookings implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Bookings[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Bookings[ id=" + id + " ]";
     }
     
 }

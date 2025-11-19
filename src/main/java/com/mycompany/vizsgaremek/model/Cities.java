@@ -157,7 +157,7 @@ public class Cities implements Serializable {
 
     @Override
     public String toString() {
-        return "com.mycompany.gyakorlas.model.Cities[ id=" + id + " ]";
+        return "com.mycompany.vizsgaremek.model.Cities[ id=" + id + " ]";
     }
     
 }
