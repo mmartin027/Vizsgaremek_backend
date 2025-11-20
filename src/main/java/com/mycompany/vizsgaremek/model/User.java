@@ -233,15 +233,54 @@ public class User implements Serializable {
     }
 }
 
-    
-public static User login(User email ){
-    EntityManagerFactory emf = Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+public List<Role> getRoles() {
+    if (userXRoleCollection == null) {
+        return new ArrayList<>();
+    }
+
+    return userXRoleCollection.stream()
+            .map(UserXRole::getRoleId) // feltételezve, hogy getRoleId() visszaadja a Role objektumot
+            .toList();
+}
+
+ 
+ public User login(User u) {
+    EntityManagerFactory emf =
+            Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
     EntityManager em = emf.createEntityManager();
+
     try {
-        return em.createQuery("SELECT u FROM User u WHERE u.email = :email AND u.password = :pwd", User.class)
-                 .setParameter("email", email)
-                 .setParameter("pwd", password)
-                 .getSingleResult();
+        User result = em.createQuery(
+                "SELECT usr FROM User usr WHERE usr.email = :email AND usr.password = :pwd",
+                User.class)
+            .setParameter("email", u.getEmail())
+            .setParameter("pwd", u.getPassword())
+            .getSingleResult();
+
+        return result;
+
+    } catch (Exception ex) {
+        return null;
+
+    } finally {
+        em.close();
+        emf.close();
+    }
+}
+
+    
+public static User login(String email, String password) {
+    EntityManagerFactory emf =
+            Persistence.createEntityManagerFactory("YOUR_PERSISTENCE_UNIT_NAME");
+    EntityManager em = emf.createEntityManager();
+
+    try {
+        return em.createQuery(
+                "SELECT u FROM User u WHERE u.email = :email AND u.password = :pwd",
+                User.class)
+             .setParameter("email", email)
+             .setParameter("pwd", password)
+             .getSingleResult();
     } catch(Exception ex) {
         return null;
     } finally {
@@ -249,6 +288,7 @@ public static User login(User email ){
         emf.close();
     }
 }
+
 
     
     
