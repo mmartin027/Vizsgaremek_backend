@@ -1,5 +1,6 @@
 com\mycompany\vizsgaremek\model\Role.class
 com\mycompany\vizsgaremek\service\RoleService.class
+com\mycompany\vizsgaremek\controller\CorsFilter.class
 com\mycompany\vizsgaremek\model\ParkingSpotFeatures.class
 com\mycompany\vizsgaremek\model\User.class
 com\mycompany\vizsgaremek\model\Vehicles.class

@@ -20,6 +20,7 @@ public class ApplicationConfig extends Application {
      * If required, comment out calling this method in getClasses().
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
+        resources.add(com.mycompany.vizsgaremek.controller.CorsFilter.class);
         resources.add(com.mycompany.vizsgaremek.controller.UserController.class);
         resources.add(com.mycompany.vizsgaremek.service.RoleService.class);
         resources.add(com.mycompany.vizsgaremek.service.UserRoleService.class);
