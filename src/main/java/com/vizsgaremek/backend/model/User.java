@@ -30,6 +30,12 @@ public class User {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
+    @Column(name = "provider", length = 20)
+    private String provider; // "LOCAL" vagy "GOOGLE"
+
+    @Column(name = "profile_picture", length = 500)
+    private String profilePicture; // Google profilkép URL (opcionális)
+
     @Column(name = "username", nullable = false,unique = true, length = 50)
     private String username;
 

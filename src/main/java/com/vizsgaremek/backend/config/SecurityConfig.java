@@ -3,6 +3,7 @@ package com.vizsgaremek.backend.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.vizsgaremek.backend.security.OAuth2LoginSuccessHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -36,25 +37,39 @@ public class SecurityConfig {
         return provider;
     }
 
-    // --- Security Filter Chain ---
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
 
-        http.csrf(cs -> cs.disable());
+        http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/register", "/login").permitAll()   // <-- fontos a "/" jel
+                // ✅ Publikus endpoint-ok
+                .requestMatchers("/", "/register", "/login", "/error").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                // Védett endpoint-ok
                 .anyRequest().authenticated()
         );
 
+        // Session management
         http.sessionManagement(sess ->
-                sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
         );
 
+        // JWT filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // OAuth2 Login
+        http.oauth2Login(oauth2 -> oauth2
+                .loginPage("/login") // Egyedi login oldal (ha van)
+                .successHandler(oAuth2LoginSuccessHandler)
+                .defaultSuccessUrl("/home", true)
+                .failureUrl("/login?error=true")
+        );
 
         return http.build();
     }
+
 
     // --- AuthenticationManager ---
     @Bean
