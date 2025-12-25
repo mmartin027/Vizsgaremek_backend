@@ -21,7 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class JwtFilter  extends OncePerRequestFilter {
+public class    JwtFilter  extends OncePerRequestFilter {
 
 
     @Autowired
@@ -33,6 +33,12 @@ public class JwtFilter  extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+
+        // Ha OPTIONS kérés érkezik, engedjük tovább, ne keressünk rajta JWT-t!
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
 
         String authHeader  = request.getHeader("Authorization");
         String token = null;
