@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Component
+
+
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     @Autowired
@@ -71,6 +73,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
                     return userRepository.save(newUser);
                 });
+
 
         // Utolsó bejelentkezés frissítése
         user.setLastLogin(Instant.now());

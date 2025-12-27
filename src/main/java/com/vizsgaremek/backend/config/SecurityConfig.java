@@ -17,6 +17,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -58,37 +60,36 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) throws Exception {
-        http.cors(Customizer.withDefaults());
-        http.csrf(csrf -> csrf.disable());
+        http
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
 
-        http.authorizeHttpRequests(auth -> auth
-                // ✅ Publikus endpoint-ok
-                .requestMatchers("/", "/register", "/login", "/error").permitAll()
-                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/register", "/login", "/error").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .anyRequest().authenticated()
+                )
 
-                // Védett endpoint-ok
-                .anyRequest().authenticated()
-        );
+                // CSAK EGYSZER szerepeljen, és a handler végezze az átirányítást!
+                .oauth2Login(oauth2 -> oauth2
+                                .successHandler(oAuth2LoginSuccessHandler)
+                        // Töröltük a defaultSuccessUrl-t, mert a Handlerben már benne van a http://localhost:4200/login-success
+                )
 
-        // Session management
-        http.sessionManagement(sess ->
-                sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-        );
+                .sessionManagement(sess -> sess
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
 
-        // JWT filter
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // OAuth2 Login
-        http.oauth2Login(oauth2 -> oauth2
-                .loginPage("/login") // Egyedi login oldal (ha van)
-                .successHandler(oAuth2LoginSuccessHandler)
-                .defaultSuccessUrl("/home", true)
-                .failureUrl("/login?error=true")
-        );
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
+    };
 
 
     // --- AuthenticationManager ---
