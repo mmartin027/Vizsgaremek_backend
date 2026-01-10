@@ -1,4 +1,4 @@
-package com.vizsgaremek.backend.security;
+package com.vizsgaremek.backend.config;
 
 import com.vizsgaremek.backend.model.User;
 import com.vizsgaremek.backend.repository.UserRepository;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
@@ -31,59 +32,58 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
 
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String picture = oAuth2User.getAttribute("picture");
+        try {
+            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+            String email = oAuth2User.getAttribute("email");
+            String name = oAuth2User.getAttribute("name");
+            String picture = oAuth2User.getAttribute("picture");
 
-        System.out.println(" Sikeres Google login: " + email);
+            System.out.println("Sikeres Google login: " + email);
 
-        // Email alapján keresünk/hozunk létre user-t
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = new User();
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> {
+                        User newUser = new User();
+                        newUser.setEmail(email);
+                        newUser.setUsername(email);
 
-                    // Google adatok
-                    newUser.setEmail(email);
-                    newUser.setUsername(email); // Username = email
+                        if (name != null && name.contains(" ")) {
+                            String[] nameParts = name.split(" ", 2);
+                            newUser.setFirstName(nameParts[0]);
+                            newUser.setLastName(nameParts[1]);
+                        } else {
+                            newUser.setFirstName(name != null ? name : "");
+                            newUser.setLastName("");
+                        }
 
-                    // Név szétbontása (ha van szóköz)
-                    if (name != null && name.contains(" ")) {
-                        String[] nameParts = name.split(" ", 2);
-                        newUser.setFirstName(nameParts[0]);
-                        newUser.setLastName(nameParts[1]);
-                    } else {
-                        newUser.setFirstName(name != null ? name : "");
-                        newUser.setLastName("");
-                    }
+                        newUser.setProvider("GOOGLE");
+                        newUser.setPassword(null);
+                        newUser.setAuthSecret(UUID.randomUUID().toString());
+                        newUser.setPhone("");
+                        newUser.setGuid(UUID.randomUUID().toString());
 
-                    newUser.setProvider("GOOGLE");
-                    newUser.setProfilePicture(picture);
+                        // JAVÍTVA: LocalDateTime.now() használata
+                        newUser.setCreatedAt(LocalDateTime.now());
+                        newUser.setIsDeleted(false);
+                        newUser.setRegToken(UUID.randomUUID().toString());
+                        newUser.setRegisterFinishedAt(LocalDateTime.now());
 
-                    // Kötelező mezők kitöltése
-                    newUser.setPassword(null); // Google user-nek nincs jelszava
-                    newUser.setAuthSecret(UUID.randomUUID().toString());
-                    newUser.setPhone(""); // Később kitöltheti
-                    newUser.setGuid(UUID.randomUUID().toString());
-                    newUser.setCreatedAt(Instant.now());
-                    newUser.setIsDeleted(false);
-                    newUser.setRegToken(UUID.randomUUID().toString());
-                    newUser.setRegisterFinishedAt(Instant.now()); // Google user azonnal kész
-                    newUser.setImg("default_path");
+                        return userRepository.save(newUser);
+                    });
 
-                    return userRepository.save(newUser);
-                });
+            // JAVÍTVA: Itt is LocalDateTime.now()
+            user.setLastLogin(LocalDateTime.now());
+            userRepository.save(user);
 
+            String token = jwtService.generateToken(user.getEmail());
 
-        // Utolsó bejelentkezés frissítése
-        user.setLastLogin(Instant.now());
-        userRepository.save(user);
+            String targetUrl = "http://localhost:4200/login-success?token=" + token;
 
-        // JWT token generálás
-        String token = jwtService.generateToken(user.getEmail());
+            System.out.println("Átirányítás ide: " + targetUrl);
+            getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
-        // Átirányítás a frontra
-        String targetUrl = "http://localhost:4200/login-success?token=" + token;
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
-    }
-}
+        } catch (Exception e) {
+            System.err.println("Hiba a Success Handlerben: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect("http://localhost:4200/login?error=oauth2_error");
+        }
+    }}

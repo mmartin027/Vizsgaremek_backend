@@ -1,75 +1,83 @@
 package com.vizsgaremek.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.Data;
+import java.time.LocalDateTime;
 
-import java.time.Instant;
-
-@Getter
-@Setter
 @Entity
-@Table(name = "user")
+@Table(name = "user") // Cseréld le a tényleges tábla nevedre!
+@Data
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Integer id;
+    private Long id;
 
-    @Column(name = "first_name", nullable = false, length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", nullable = false, length = 100)
-    private String lastName;
-
-    @ColumnDefault("'default_path'")
-    @Column(name = "img", nullable = false)
-    private String img;
-
-    @Column(name = "email", nullable = false, length = 100)
-    private String email;
-
-    @Column(name = "provider", length = 20)
-    private String provider; // "LOCAL" vagy "GOOGLE"
-
-    @Column(name = "profile_picture", length = 500)
-    private String profilePicture; // Google profilkép URL (opcionális)
-
-    @Column(name = "username", nullable = false,unique = true, length = 50)
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    @Lob
-    @Column(name = "password")
+    @Column(name = "password", nullable = true)
     private String password;
 
-    @Column(name = "auth_secret", nullable = false, length = 64)
-    private String authSecret;
+    @Column(name = "email", unique = true)
+    private String email;
 
-    @Column(name = "phone", nullable = false, length = 30)
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "phone")
     private String phone;
 
-    @Column(name = "guid", length = 64)
+
+    @Column(name = "auth_secret")
+    private String authSecret = "";  // <-- ALAPÉRTELMEZETT ÉRTÉK!
+
+    @Column(name = "guid")
     private String guid;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @Column(name = "provider")
+    private String provider = "local";  // <-- ALAPÉRTELMEZETT ÉRTÉK!
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
-
-    @ColumnDefault("0")
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
-
-    @Column(name = "last_login")
-    private Instant lastLogin;
-
-    @Column(name = "register_finished_at")
-    private Instant registerFinishedAt;
-
-    @Column(name = "reg_token", nullable = false, length = 64)
+    @Column(name = "reg_token")
     private String regToken;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;  // <-- ALAPÉRTELMEZETT ÉRTÉK!
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
+    @Column(name = "register_finished_at")
+    private LocalDateTime registerFinishedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (registerFinishedAt == null) {
+            registerFinishedAt = LocalDateTime.now();
+        }
+        if (guid == null || guid.isEmpty()) {
+            guid = java.util.UUID.randomUUID().toString();
+        }
+        if (authSecret == null) {
+            authSecret = "";  // <-- FONTOS!
+        }
+        if (provider == null) {
+            provider = "local";
+        }
+        if (isDeleted == null) {
+            isDeleted = false;
+        }
+    }
 }
