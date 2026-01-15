@@ -67,7 +67,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // 2. JAVÍTVA: Engedélyezd a login, register ÉS forgotPassword útvonalakat!
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
