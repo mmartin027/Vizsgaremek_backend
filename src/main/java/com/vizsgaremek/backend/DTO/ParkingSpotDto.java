@@ -10,6 +10,7 @@ import java.io.Serializable;
 @Value
 public class ParkingSpotDto implements Serializable {
     Integer id;
+    String Address;
     String name;
     Integer hourlyRate;
     String features;

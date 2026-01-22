@@ -20,7 +20,9 @@ public class ForgotPassword {
     private Long fpid;
 
     @Column(nullable = false)
-    private Integer otp;
+    private String  otpHash;
+
+
 
     @Column(nullable = false)
     private Date expirationTime;

@@ -42,14 +42,20 @@ public class ForgotPasswordController {
                 .orElseThrow(() -> new UsernameNotFoundException("Kérlek helyes emailt adj meg"));
 
         int otp = otpGenerator();
+
+        // OTP hashelése
+        String otpHash = passwordEncoder.encode(String.valueOf(otp));
+
         MailBody mailBody = new MailBody(
                 email,
                 "OTP for forgot password",
-                "A kódod: " + otp
+                "A kódod: " + otp  // Eredeti OTP az emailben
         );
 
+        forgotPasswordRepository.deleteByUser(user);
+
         ForgotPassword fp = ForgotPassword.builder()
-                .otp(otp)
+                .otpHash(otpHash)  // Hashelt verzió mentése
                 .expirationTime(new Date(System.currentTimeMillis() + 70 * 1000))
                 .user(user)
                 .build();
@@ -65,8 +71,14 @@ public class ForgotPasswordController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Felhasználó nem található"));
 
-        ForgotPassword fp = forgotPasswordRepository.findByOtpAndUser(otp, user)
-                .orElseThrow(() -> new RuntimeException("Érvénytelen kód: " + email));
+        // Módosítás: user alapján keresünk nem OTP-vel
+        ForgotPassword fp = forgotPasswordRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Érvénytelen kérés"));
+
+        // Hash ellenőrzés
+        if (!passwordEncoder.matches(String.valueOf(otp), fp.getOtpHash())) {
+            return new ResponseEntity<>("Érvénytelen kód", HttpStatus.UNAUTHORIZED);
+        }
 
         if (fp.getExpirationTime().before(Date.from(Instant.now()))) {
             forgotPasswordRepository.deleteById(fp.getFpid());

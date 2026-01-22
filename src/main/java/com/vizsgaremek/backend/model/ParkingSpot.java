@@ -7,6 +7,7 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -91,5 +92,12 @@ public class ParkingSpot {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+
+    private List<Booking> bookings;
+
+    public String getMainImageUrl() {
+        return mainImageUrl;
+    }
 
 }

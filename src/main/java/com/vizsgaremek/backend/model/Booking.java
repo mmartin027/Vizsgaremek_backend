@@ -18,8 +18,12 @@ public class Booking {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parking_space_id")
+    @JoinColumn(name = "parking_spot_id")
     private ParkingSpace parkingSpace;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "start_time", nullable = false)

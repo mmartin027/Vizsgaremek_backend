@@ -66,12 +66,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 2. JAVÍTVA: Engedélyezd a login, register ÉS forgotPassword útvonalakat!
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**","/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        // OAuth2-höz jobb az IF_REQUIRED, de a JWT miatt maradhat STATELESS,
+
                         // ha a SuccessHandler jól irányít át.
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

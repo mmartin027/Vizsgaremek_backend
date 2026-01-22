@@ -33,8 +33,7 @@ public class UserService {
 
         user.setCreatedAt(LocalDateTime.now());
         user.setIsDeleted(false);
-        user.setProvider("LOCAL"); // Jelezzük, hogy ez nem Google login
-
+        user.setProvider("LOCAL");
 
         user.setGuid(UUID.randomUUID().toString());
         user.setAuthSecret(UUID.randomUUID().toString());
