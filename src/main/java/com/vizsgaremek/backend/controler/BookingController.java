@@ -1,4 +1,4 @@
-package com.vizsgaremek.backend.controller;
+package com.vizsgaremek.backend.controler;
 
 import com.vizsgaremek.backend.DTO.BookingDto;
 import com.vizsgaremek.backend.model.Booking;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:4200")
 public class BookingController {
 
     @Autowired
@@ -125,7 +125,7 @@ public class BookingController {
      * Foglalások státusz szerint
      */
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<BookingDto>> getBookingsByStatus(@PathVariable String status) {
+    public ResponseEntity<List<BookingDto>> getBookingsByStatus(@PathVariable Enum status) {
         List<Booking> bookings = bookingService.getBookingsByStatus(status);
         List<BookingDto> bookingDtos = bookings.stream()
                 .map(this::convertToDto)
@@ -133,26 +133,45 @@ public class BookingController {
         return ResponseEntity.ok(bookingDtos);
     }
 
-    /**
-     * Entity -> DTO konverzió
-     */
+
     private BookingDto convertToDto(Booking booking) {
         BookingDto dto = new BookingDto();
         dto.setId(booking.getId());
-        dto.setParkingSpotId(booking.getParkingSpot() != null ? booking.getParkingSpot().getId() : null);
-        dto.setUserId(booking.getUser() != null ? booking.getUser().getId() : null);
+
+        if (booking.getParkingSpot() != null) {
+            dto.setParkingSpotId(booking.getParkingSpot().getId());
+            dto.setParkingSpotName(booking.getParkingSpot().getName());
+            dto.setParkingSpotAddress(booking.getParkingSpot().getAddress());
+        }
+
+        if (booking.getUser() != null) {
+            dto.setUserId(booking.getUser().getId());
+            dto.setUserName(booking.getUser().getUsername());
+            dto.setUserEmail(booking.getUser().getEmail());
+        }
+
         dto.setStartTime(booking.getStartTime());
         dto.setEndTime(booking.getEndTime());
         dto.setHours(booking.getHours());
         dto.setTotalPrice(booking.getTotalPrice());
+
+        // Autó adatok
         dto.setLicensePlate(booking.getLicensePlate());
         dto.setCarBrand(booking.getCarBrand());
         dto.setCarModel(booking.getCarModel());
         dto.setCarColor(booking.getCarColor());
+
+        // Státusz és extra
         dto.setStatus(booking.getStatus());
+        dto.setQrCode(booking.getQrCode());
+        dto.setAccessCode(booking.getAccessCode());
+        dto.setIsExtended(booking.getIsExtended());
+
+        // Időbélyegek
         dto.setCreatedAt(booking.getCreatedAt());
         dto.setUpdatedAt(booking.getUpdatedAt());
         dto.setCancelledAt(booking.getCancelledAt());
+
         return dto;
     }
 }
