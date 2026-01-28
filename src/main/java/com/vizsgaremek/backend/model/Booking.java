@@ -19,7 +19,7 @@ public class Booking {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parking_spot_id")
-    private ParkingSpace parkingSpace;
+    private ParkingSpot  parkingSpot;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -72,4 +72,5 @@ public class Booking {
     private Instant updatedAt;
 
     private Instant cancelledAt;
+
 }

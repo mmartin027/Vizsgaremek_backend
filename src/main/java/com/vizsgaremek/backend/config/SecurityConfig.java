@@ -31,9 +31,8 @@ public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
 
-    // 1. EZ HIÁNYZOTT: Injektáld be a handlert!
     @Autowired
-    private com.vizsgaremek.backend.config.OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public AuthenticationProvider authProvider() {

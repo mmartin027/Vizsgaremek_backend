@@ -36,9 +36,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingDtos);
     }
 
-    /**
-     * Foglalás lekérdezése ID alapján
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Integer id) {
         try {
@@ -51,41 +49,35 @@ public class BookingController {
         }
     }
 
-    /**
-     * Foglalás lekérdezése megerősítő kód alapján
-     */
-    @GetMapping("/confirmation/{confirmationCode}")
-    public ResponseEntity<?> getBookingByConfirmationCode(@PathVariable String confirmationCode) {
+
+    @GetMapping("/confirmation/{accessCode}")
+    public ResponseEntity<?> getBookingByaccessCode(@PathVariable String accessCode) {
         try {
-            Booking booking = bookingService.findByConfirmationCode(confirmationCode);
+            Booking booking = bookingService.findByaccessCode(accessCode);
             BookingDto bookingDto = convertToDto(booking);
             return ResponseEntity.ok(bookingDto);
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Foglalás nem található megerősítő kóddal: " + confirmationCode);
+                    .body("Foglalás nem található megerősítő kóddal: " + accessCode);
         }
     }
 
-    /**
-     * Új foglalás létrehozása
-     */
+
     @PostMapping("/parkingspot/{parkingSpotId}")
     public ResponseEntity<?> createBooking(
             @PathVariable Integer parkingSpotId,
             @RequestBody BookingDto bookingDto) {
         try {
-            String confirmationCode = bookingService.createBooking(parkingSpotId, bookingDto);
+            String accessCode = bookingService.createBooking(parkingSpotId, bookingDto);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("Foglalás sikerült! Megerősítő kód: " + confirmationCode);
+                    .body("Foglalás sikerült! Megerősítő kód: " + accessCode);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Foglalás sikertelen: " + e.getMessage());
         }
     }
 
-    /**
-     * Foglalás törlése (lemondása)
-     */
+
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<?> cancelBooking(@PathVariable Integer bookingId) {
         try {
@@ -97,9 +89,7 @@ public class BookingController {
         }
     }
 
-    /**
-     * User foglalásainak lekérdezése
-     */
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<BookingDto>> getBookingsByUserId(@PathVariable Integer userId) {
         List<Booking> bookings = bookingService.getBookingsByUserId(userId);
@@ -109,9 +99,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingDtos);
     }
 
-    /**
-     * Parkolóhely foglalásainak lekérdezése
-     */
+
     @GetMapping("/parkingspot/{parkingSpotId}")
     public ResponseEntity<List<BookingDto>> getBookingsByParkingSpotId(@PathVariable Integer parkingSpotId) {
         List<Booking> bookings = bookingService.getBookingsByParkingSpotId(parkingSpotId);
@@ -121,9 +109,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingDtos);
     }
 
-    /**
-     * Foglalások státusz szerint
-     */
+
     @GetMapping("/status/{status}")
     public ResponseEntity<List<BookingDto>> getBookingsByStatus(@PathVariable Enum status) {
         List<Booking> bookings = bookingService.getBookingsByStatus(status);
@@ -145,7 +131,7 @@ public class BookingController {
         }
 
         if (booking.getUser() != null) {
-            dto.setUserId(booking.getUser().getId());
+            dto.setUserId(Math.toIntExact(booking.getUser().getId()));
             dto.setUserName(booking.getUser().getUsername());
             dto.setUserEmail(booking.getUser().getEmail());
         }

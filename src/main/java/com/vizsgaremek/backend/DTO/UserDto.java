@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Value
 public class UserDto implements Serializable {
-    Long id;
+    Integer id;
     String username;
     String password;
     String email;

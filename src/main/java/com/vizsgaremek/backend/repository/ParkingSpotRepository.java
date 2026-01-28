@@ -12,9 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Integer> {
 
-    /**
-     * Aktív parkolók lekérdezése város ID alapján
-     */
+
     List<ParkingSpot> findByCityIdAndIsActiveTrue(Integer cityId);
 
 
@@ -32,9 +30,9 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
 
     List<ParkingSpot> findByTypesContainingIgnoreCaseAndIsActiveTrue(String type);
 
-    /**
-     * ParkingSpot-ok óradíj tartomány szerint
-     */
+
+
+
     @Query("SELECT p FROM ParkingSpot p WHERE p.hourlyRate BETWEEN :minRate AND :maxRate AND p.isActive = true")
     List<ParkingSpot> findByHourlyRateBetween(
             @Param("minRate") Integer minRate,

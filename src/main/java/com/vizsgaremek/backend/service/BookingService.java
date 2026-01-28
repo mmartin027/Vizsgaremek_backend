@@ -24,44 +24,36 @@ public class BookingService {
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
 
-
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
-
 
     public Booking getBookingById(Integer id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Foglalás nem található ID-val: " + id));
     }
 
-    public Booking getParkingSpot(Integer id){
-        return ParkingSpotRepository.findById(id);
-
+    public ParkingSpot getParkingSpot(Integer id) {
+        return parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parkolóhely nem található ID-val: " + id));
     }
 
-
-
-    public Booking findByConfirmationCode(String confirmationCode) {
-        return bookingRepository.findByAccessCode(confirmationCode)
-                .orElseThrow(() -> new RuntimeException("Foglalás nem található megerősítő kóddal: " + confirmationCode));
+    public Booking findByAccessCode(String accessCode) {
+        return bookingRepository.findByAccessCode(accessCode)
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található megerősítő kóddal: " + accessCode));
     }
-
 
     public List<Booking> getBookingsByUserId(Integer userId) {
         return bookingRepository.findByUserId(userId);
     }
 
-
     public List<Booking> getBookingsByParkingSpotId(Integer parkingSpotId) {
         return bookingRepository.findByParkingSpotId(parkingSpotId);
     }
 
-
     public List<Booking> getBookingsByStatus(Enum status) {
         return bookingRepository.findByStatus(status);
     }
-
 
     @Transactional
     public String createBooking(Integer parkingSpotId, BookingDto bookingDto) {
@@ -70,30 +62,24 @@ public class BookingService {
             throw new RuntimeException("A kezdő dátum nem lehet később mint a záró dátum!");
         }
 
-        // 2. ParkingSpot lekérdezése
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId)
                 .orElseThrow(() -> new RuntimeException("Parkoló nem található ID-val: " + parkingSpotId));
 
-        // 3. Kapacitás ellenőrzése
         if (!isParkingSpotAvailable(parkingSpot, bookingDto.getStartTime(), bookingDto.getEndTime())) {
             throw new RuntimeException("A parkoló megtelt ebben az időintervallumban!");
         }
 
-        // 4. User lekérdezése (ha van userId)
         User user = null;
         if (bookingDto.getUserId() != null) {
             user = userRepository.findById(bookingDto.getUserId())
                     .orElseThrow(() -> new RuntimeException("Felhasználó nem található ID-val: " + bookingDto.getUserId()));
         }
 
-        // 5. Órák számítása
         long hours = Duration.between(bookingDto.getStartTime(), bookingDto.getEndTime()).toHours();
         if (hours == 0) hours = 1; // Min 1 óra
 
-        // 6. Ár számítása
         Integer totalPrice = calculatePrice(parkingSpot, (int) hours);
 
-        // 7. Booking entity létrehozása
         Booking booking = new Booking();
         booking.setParkingSpot(parkingSpot);
         booking.setUser(user);
@@ -114,8 +100,6 @@ public class BookingService {
         String confirmationCode = generateConfirmationCode();
         booking.setAccessCode(confirmationCode);
 
-
-
         // 10. Mentés
         bookingRepository.save(booking);
 
@@ -125,7 +109,6 @@ public class BookingService {
 
         return confirmationCode;
     }
-
 
     @Transactional
     public void cancelBooking(Integer bookingId) {
@@ -158,9 +141,7 @@ public class BookingService {
         return activeBookings.size() < parkingSpot.getCapacity();
     }
 
-    /**
-     * Ár kalkuláció
-     */
+
     private Integer calculatePrice(ParkingSpot parkingSpot, int hours) {
         // Egyszerű óradíj számítás
         if (parkingSpot.getHourlyRate() != null) {
@@ -173,4 +154,8 @@ public class BookingService {
      * Megerősítő kód generálása
      */
     private String generateConfirmationCode() {
-        return UUID.randomUUID().toString().substring(0, 8).toUpperCase(
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+
+}

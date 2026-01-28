@@ -20,7 +20,6 @@ public class BookingDto implements Serializable {
     private String parkingSpotName;
     private String parkingSpotAddress;
 
-    // User kapcsolat
     private Integer userId;
     private String userName;
     private String userEmail;
