@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +19,10 @@ public class ParkingSpot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
+
+
+
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
@@ -47,9 +52,20 @@ public class ParkingSpot {
     @Column(name = "distance_from_center")
     private Integer distanceFromCenter;
 
-    @Lob
+
     @Column(name = "types")
     private String types;
+
+    @ColumnDefault("'OUTDOOR'")
+    @Lob
+    @Column(name = "parking_type")
+    private String parkingType;
+
+    @Column(name = "zone_name", length = 100)
+    private String zoneName;
+
+    @Column(name = "zone_code", length = 20)
+    private String zoneCode;
 
     @Lob
     @Column(name = "features")
@@ -94,10 +110,12 @@ public class ParkingSpot {
     private Instant updatedAt;
 
 
+    @OneToMany(mappedBy = "parkingSpot")
     private List<Booking> bookings;
 
     public String getMainImageUrl() {
         return mainImageUrl;
     }
+
 
 }

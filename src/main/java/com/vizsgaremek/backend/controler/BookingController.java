@@ -2,7 +2,7 @@ package com.vizsgaremek.backend.controler;
 
 import com.vizsgaremek.backend.DTO.BookingDto;
 import com.vizsgaremek.backend.model.Booking;
-import com.vizsgaremek.backend.model.ParkingSpot;
+import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.service.BookingService;
 import com.vizsgaremek.backend.service.ParkingSpotService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +20,9 @@ public class BookingController {
 
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Autowired
     private ParkingSpotService parkingSpotService;

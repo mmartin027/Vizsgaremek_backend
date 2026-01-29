@@ -33,14 +33,14 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Foglalás nem található ID-val: " + id));
     }
 
+    public Booking findByaccessCode(String accessCode) {
+        return bookingRepository.findByAccessCode(accessCode)
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található access kóddal: " + accessCode));
+    }
+
     public ParkingSpot getParkingSpot(Integer id) {
         return parkingSpotRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Parkolóhely nem található ID-val: " + id));
-    }
-
-    public Booking findByAccessCode(String accessCode) {
-        return bookingRepository.findByAccessCode(accessCode)
-                .orElseThrow(() -> new RuntimeException("Foglalás nem található megerősítő kóddal: " + accessCode));
     }
 
     public List<Booking> getBookingsByUserId(Integer userId) {
@@ -50,6 +50,7 @@ public class BookingService {
     public List<Booking> getBookingsByParkingSpotId(Integer parkingSpotId) {
         return bookingRepository.findByParkingSpotId(parkingSpotId);
     }
+
 
     public List<Booking> getBookingsByStatus(Enum status) {
         return bookingRepository.findByStatus(status);
@@ -96,14 +97,14 @@ public class BookingService {
         booking.setCreatedAt(Instant.now());
         booking.setUpdatedAt(Instant.now());
 
-        // 8. Megerősítő kód generálása
+        // Megerősítő kód generálása
         String confirmationCode = generateConfirmationCode();
         booking.setAccessCode(confirmationCode);
 
-        // 10. Mentés
+        // Mentés
         bookingRepository.save(booking);
 
-        // 11. ParkingSpot occupied_spaces növelése
+        // ParkingSpot occupied_spaces növelése
         parkingSpot.setOccupiedSpaces(parkingSpot.getOccupiedSpaces() + 1);
         parkingSpotRepository.save(parkingSpot);
 
@@ -129,33 +130,21 @@ public class BookingService {
         }
     }
 
-    /**
-     * Ellenőrzi, van-e szabad hely a parkolóban az adott időintervallumban
-     */
     private boolean isParkingSpotAvailable(ParkingSpot parkingSpot, Instant startTime, Instant endTime) {
-        // Lekérdezzük az aktív foglalásokat ebben az időintervallumban
         List<Booking> activeBookings = bookingRepository.findActiveBookingsInTimeRange(
                 parkingSpot.getId(), startTime, endTime);
 
-        // Ha az aktív foglalások száma >= kapacitás, akkor nincs hely
         return activeBookings.size() < parkingSpot.getCapacity();
     }
 
-
     private Integer calculatePrice(ParkingSpot parkingSpot, int hours) {
-        // Egyszerű óradíj számítás
         if (parkingSpot.getHourlyRate() != null) {
             return parkingSpot.getHourlyRate() * hours;
         }
         return 0;
     }
 
-    /**
-     * Megerősítő kód generálása
-     */
     private String generateConfirmationCode() {
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
-
-
 }

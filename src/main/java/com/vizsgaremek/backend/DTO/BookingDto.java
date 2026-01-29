@@ -1,9 +1,6 @@
 package com.vizsgaremek.backend.DTO;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.Serializable;
 import java.time.Instant;
 
@@ -11,20 +8,24 @@ import java.time.Instant;
  * DTO for {@link com.vizsgaremek.backend.model.Booking}
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class BookingDto implements Serializable {
+
+    // Booking alapadatok
     private Integer id;
 
+    // ParkingSpot adatok
     private Integer parkingSpotId;
     private String parkingSpotName;
     private String parkingSpotAddress;
+    private String parkingType;        // COVERED vagy OUTDOOR
+    private String zoneName;           // I. Zóna (ha outdoor)
 
+    // User adatok
     private Integer userId;
     private String userName;
     private String userEmail;
 
-    // Foglalás idő adatok
+    // Időpontok
     private Instant startTime;
     private Instant endTime;
     private Integer hours;
@@ -36,11 +37,20 @@ public class BookingDto implements Serializable {
     private String carModel;
     private String carColor;
 
-    // Státusz és extra info
+    // Státusz
     private String status;
     private String qrCode;
     private String accessCode;
+
+    // Meghosszabbítás
     private Boolean isExtended;
+    private Integer extensionCount;
+    private Instant originalEndTime;
+    private Instant lastExtendedAt;
+
+    // Check-in
+    private Instant checkInTime;
+    private Instant checkOutTime;
 
     // Időbélyegek
     private Instant createdAt;

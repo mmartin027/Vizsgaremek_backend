@@ -1,8 +1,9 @@
 package com.vizsgaremek.backend.repository;
 
 import com.vizsgaremek.backend.model.Booking;
-import com.vizsgaremek.backend.model.ParkingSpot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -10,14 +11,22 @@ import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
-    List<Booking>findByUserId(Integer userId);
+    List<Booking> findByUserId(Integer userId);
 
+    List<Booking> findByParkingSpotId(Integer parkingSpotId);
 
-    List<Booking> findByParkingSpotId(Integer parkingSpotId );
+    // Mivel az entitásban String status van, itt is String-et használunk
+    List<Booking> findByStatus(Enum status);
 
-    List<Booking> findByStatus(Enum StatusId);
+    Optional<Booking> findByAccessCode(String accessCode);
 
-    Optional<Booking> findByAccessCode(String accesCodeId);
-
-    List<Booking> findActiveBookingsInTimeRange(Integer id, Instant startTime, Instant endTime);
+    // Ez a metódus okozta az összeomlást. A @Query-vel megmondjuk pontosan, mit keressen.
+    @Query("SELECT b FROM Booking b WHERE b.parkingSpot.id = :spotId " +
+            "AND b.status != 'CANCELLED' " +
+            "AND ((b.startTime < :end AND b.endTime > :start))")
+    List<Booking> findActiveBookingsInTimeRange(
+            @Param("spotId") Integer spotId,
+            @Param("start") Instant startTime,
+            @Param("end") Instant endTime
+    );
 }

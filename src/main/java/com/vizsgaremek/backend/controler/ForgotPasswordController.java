@@ -55,7 +55,7 @@ public class ForgotPasswordController {
         forgotPasswordRepository.deleteByUser(user);
 
         ForgotPassword fp = ForgotPassword.builder()
-                .otpHash(otpHash)  // Hashelt verzió mentése
+                .otpHash(otpHash)
                 .expirationTime(new Date(System.currentTimeMillis() + 70 * 1000))
                 .user(user)
                 .build();
