@@ -5,9 +5,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * DTO for {@link com.vizsgaremek.backend.model.ParkingSpot}
- */
+
 @Data
 public class ParkingSpotDto implements Serializable {
 

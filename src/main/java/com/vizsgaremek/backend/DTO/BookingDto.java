@@ -4,21 +4,18 @@ import lombok.Data;
 import java.io.Serializable;
 import java.time.Instant;
 
-/**
- * DTO for {@link com.vizsgaremek.backend.model.Booking}
- */
+
 @Data
 public class BookingDto implements Serializable {
 
-    // Booking alapadatok
     private Integer id;
 
-    // ParkingSpot adatok
+
     private Integer parkingSpotId;
     private String parkingSpotName;
     private String parkingSpotAddress;
-    private String parkingType;        // COVERED vagy OUTDOOR
-    private String zoneName;           // I. Zóna (ha outdoor)
+    private String parkingType;
+    private String zoneName;
 
     // User adatok
     private Integer userId;
@@ -42,17 +39,15 @@ public class BookingDto implements Serializable {
     private String qrCode;
     private String accessCode;
 
-    // Meghosszabbítás
+
     private Boolean isExtended;
     private Integer extensionCount;
     private Instant originalEndTime;
     private Instant lastExtendedAt;
 
-    // Check-in
     private Instant checkInTime;
     private Instant checkOutTime;
 
-    // Időbélyegek
     private Instant createdAt;
     private Instant updatedAt;
     private Instant cancelledAt;
