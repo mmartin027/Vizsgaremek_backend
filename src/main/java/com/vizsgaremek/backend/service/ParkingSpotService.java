@@ -19,6 +19,8 @@ public class ParkingSpotService {
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
+
+
     public List<ParkingSpotDto> searchByCity(Integer cityId) {
         return repository.findByCityIdAndIsActiveTrue(cityId).stream()
                 .map(this::convertToDto)
@@ -44,5 +46,14 @@ public class ParkingSpotService {
                 spot.getFeatures(),
                 fullImageUrl
         );
+    }
+
+    public ParkingSpotDto getById(Integer id) {
+
+        ParkingSpot spot = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("A parkolóhely nem található ezzel az azonosítóval: " + id));
+
+
+        return convertToDto(spot);
     }
 }

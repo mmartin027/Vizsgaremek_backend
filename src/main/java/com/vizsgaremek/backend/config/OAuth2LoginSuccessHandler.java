@@ -74,7 +74,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-            String token = jwtService.generateToken(user.getEmail());
+            String token = jwtService.generateToken(user.getEmail(),user.getId());
 
             String targetUrl = "http://localhost:4200/login-success?token=" + token;
 

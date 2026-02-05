@@ -65,7 +65,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
             @Param("parkingType") ParkingType parkingType
     );
 
-    // Város + ár + típus (komplex szűrés)
+
     @Query("SELECT p FROM ParkingSpot p WHERE p.city.id = :cityId " +
             "AND p.parkingType = :parkingType " +
             "AND p.hourlyRate BETWEEN :minRate AND :maxRate " +

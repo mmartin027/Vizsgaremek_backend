@@ -72,18 +72,22 @@ public class BookingService {
 
         User user = null;
         if (bookingDto.getUserId() != null) {
+            System.out.println(" UserId NEM null, keresés az adatbázisban: " + bookingDto.getUserId());
             user = userRepository.findById(bookingDto.getUserId())
                     .orElseThrow(() -> new RuntimeException("Felhasználó nem található ID-val: " + bookingDto.getUserId()));
+            System.out.println(" User találva: " + user.getUsername() + " (ID: " + user.getId() + ")");
+        } else {
+            System.out.println("⚠️ FIGYELEM: UserId NULL érkezett a BookingDto-ban!");
         }
 
         long hours = Duration.between(bookingDto.getStartTime(), bookingDto.getEndTime()).toHours();
-        if (hours == 0) hours = 1; // Min 1 óra
+        if (hours == 0) hours = 1;
 
         Integer totalPrice = calculatePrice(parkingSpot, (int) hours);
 
         Booking booking = new Booking();
         booking.setParkingSpot(parkingSpot);
-        booking.setUser(user);
+        booking.setUser(user);  // Ez NULL lesz, ha userId null volt!
         booking.setStartTime(bookingDto.getStartTime());
         booking.setEndTime(bookingDto.getEndTime());
         booking.setHours((int) hours);
@@ -97,14 +101,12 @@ public class BookingService {
         booking.setCreatedAt(Instant.now());
         booking.setUpdatedAt(Instant.now());
 
-        // Megerősítő kód generálása
         String confirmationCode = generateConfirmationCode();
         booking.setAccessCode(confirmationCode);
 
-        // Mentés
+        System.out.println("🔍 Booking mentése - User ID: " + (user != null ? user.getId() : "NULL"));
         bookingRepository.save(booking);
 
-        // ParkingSpot occupied_spaces növelése
         parkingSpot.setOccupiedSpaces(parkingSpot.getOccupiedSpaces() + 1);
         parkingSpotRepository.save(parkingSpot);
 

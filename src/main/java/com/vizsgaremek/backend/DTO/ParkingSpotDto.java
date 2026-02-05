@@ -45,7 +45,7 @@ public class ParkingSpotDto implements Serializable {
     private String description;
 
     // Képek
-    private String mainImageUrl;
+    private String main_Image_Url;
     private String imageGallery;
 
     // Értékelés
@@ -65,7 +65,7 @@ public class ParkingSpotDto implements Serializable {
         this.address = address;
         this.hourlyRate = hourlyRate;
         this.features = features;
-        this.mainImageUrl = mainImageUrl;
+        this.main_Image_Url = fullImageUrl;
 
     }
 }

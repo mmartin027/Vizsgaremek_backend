@@ -44,7 +44,6 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         try {
-            // 1. Kisbetűs loginDto-t használunk!
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginDto.getUsername(),
@@ -53,9 +52,11 @@ public class UserController {
             );
 
             if (authentication.isAuthenticated()) {
+                // User lekérése
+                User user = service.findByUsername(loginDto.getUsername());
 
-                String token = jwtService.generateToken(loginDto.getUsername());
-
+                // Token generálása userId-vel
+                String token = jwtService.generateToken(loginDto.getUsername(), user.getId());
 
                 return ResponseEntity.ok(token);
             } else {

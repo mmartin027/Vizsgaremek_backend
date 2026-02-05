@@ -17,17 +17,12 @@ public class UserDetailService implements UserDetailsService {
     private UserRepository repo;
 
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException{
+        @Override
+        public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-         User user = repo.findByUsername (username);
+            User user = repo.findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        if(user == null){
-            System.out.println("user 404");
-            throw new UsernameNotFoundException("user 404");
+            return new UserPrincipal(user);
         }
-
-        return new UserPrincipal(user);
     }
-
-}

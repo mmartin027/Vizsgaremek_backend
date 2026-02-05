@@ -40,15 +40,27 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId); // <-- HOZZÁADVA
 
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 óra
+                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
 
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 3)) // 3 perc
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -59,8 +71,17 @@ public class JwtService {
     }
 
     public String extractUserName(String token) {
-        // extract the username from jwt token
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // ÚJ - userId kinyerése tokenből
+    public Long extractUserId(String token) {
+        final Claims claims = extractAllClaims(token);
+        Object userIdObj = claims.get("userId");
+        if (userIdObj instanceof Integer) {
+            return ((Integer) userIdObj).longValue();
+        }
+        return (Long) userIdObj;
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
@@ -73,7 +94,6 @@ public class JwtService {
                 .setSigningKey(getKey())
                 .build().parseClaimsJws(token).getBody();
     }
-
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String userName = extractUserName(token);

@@ -5,10 +5,7 @@ import com.vizsgaremek.backend.DTO.ParkingSpotDto;
 import com.vizsgaremek.backend.service.ParkingSpotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,4 +20,11 @@ public class ParkingSpotController {
     public ResponseEntity<List<ParkingSpotDto>> search(@RequestParam Integer cityId) {
         return ResponseEntity.ok(service.searchByCity(cityId));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ParkingSpotDto> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(service.getById(id));
+    }
+
+
 }
