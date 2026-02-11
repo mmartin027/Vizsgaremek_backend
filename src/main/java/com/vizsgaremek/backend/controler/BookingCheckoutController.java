@@ -1,85 +1,88 @@
 package com.vizsgaremek.backend.controler;
 
-import com.stripe.exception.StripeException;
-import com.stripe.model.checkout.Session;
 import com.vizsgaremek.backend.DTO.BookingDto;
-import com.vizsgaremek.backend.DTO.BookingRequest;
-import com.vizsgaremek.backend.DTO.StripeResponse;
 import com.vizsgaremek.backend.service.BookingService;
 import com.vizsgaremek.backend.service.StripeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/booking") // Módosítva: /api/booking
+@RequestMapping("/api/checkout")
 @CrossOrigin(origins = "http://localhost:4200")
 public class BookingCheckoutController {
 
-    private final StripeService stripeService;
+    @Autowired
+    private StripeService stripeService;
+
+    @Autowired
     private BookingService bookingService;
 
-
-    public BookingCheckoutController(StripeService stripeService) {
-        this.stripeService = stripeService;
-    }
-
-    @PostMapping("/checkout")
-    public ResponseEntity<StripeResponse> checkoutBooking(@RequestBody BookingRequest bookingRequest) {
-
-        StripeResponse stripeResponse = stripeService.checkoutBooking(bookingRequest); // Javítva
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(stripeResponse);
-    }
-
-
-    @PostMapping("/confirm-booking")
-    public ResponseEntity<?> confirmBooking(@RequestParam String sessionId) {
+   
+    @PostMapping("/create-session")
+    public ResponseEntity<?> createCheckoutSession(
+            @RequestBody BookingDto bookingDto,
+            @RequestParam Integer parkingSpotId) {
         try {
-            Session session = stripeService.verifySession(sessionId);
+            String sessionId = stripeService.createCheckoutSession(bookingDto, parkingSpotId);
 
-            if (!"complete".equals(session.getStatus()) || !"paid".equals(session.getPaymentStatus())) {
-                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
-                        .body(Map.of("error", "Fizetés nem lett teljesítve"));
-            }
+            Map<String, String> response = new HashMap<>();
+            response.put("sessionId", sessionId);
 
-            // 3. Metadata kiolvasása (foglalási adatok)
-            Map<String, String> metadata = session.getMetadata();
+            return ResponseEntity.ok(response);
 
-            // 4. BookingDto összeállítása
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 2. LÉPÉS: Fizetés sikeres → Foglalás mentése
+     */
+    @PostMapping("/confirm-payment")
+    public ResponseEntity<?> confirmPayment(@RequestParam String sessionId) {
+        try {
+            // 1. Stripe session adatok lekérése
+            Map<String, String> metadata = stripeService.retrieveSession(sessionId);
+
+            // 2. BookingDto újraépítése a metadata-ból
             BookingDto bookingDto = new BookingDto();
-            bookingDto.setUserId(Long.valueOf(Integer.valueOf(metadata.get("userId"))));
-            bookingDto.setStartTime(Instant.parse(metadata.get("startTime")));
-            bookingDto.setEndTime(Instant.parse(metadata.get("endTime")));
             bookingDto.setLicensePlate(metadata.get("licensePlate"));
             bookingDto.setCarBrand(metadata.get("carBrand"));
             bookingDto.setCarModel(metadata.get("carModel"));
             bookingDto.setCarColor(metadata.get("carColor"));
+            bookingDto.setStartTime(Instant.parse(metadata.get("startTime")));
+            bookingDto.setEndTime(Instant.parse(metadata.get("endTime")));
 
-            // 5. Foglalás létrehozása az adatbázisban
-            Integer parkingSpotId = Integer.valueOf(metadata.get("parkingSpotId"));
+            if (metadata.containsKey("userId")) {
+                bookingDto.setUserId(Long.parseLong(metadata.get("userId")));
+            }
+
+            Integer parkingSpotId = Integer.parseInt(metadata.get("parkingSpotId"));
+
+            // 3. Foglalás mentése az adatbázisba
             String accessCode = bookingService.createBooking(parkingSpotId, bookingDto);
 
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "accessCode", accessCode,
-                    "message", "Foglalás sikeresen létrehozva"
-            ));
+            // 4. Sikeres válasz
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("accessCode", accessCode);
+            response.put("message", "Fizetés sikeres! Foglalás létrehozva.");
 
-        } catch (StripeException e) {
-            System.err.println("Stripe hiba: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Stripe hiba: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (Exception e) {
-            System.err.println("Foglalás létrehozási hiba: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Foglalás létrehozási hiba: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "success", false,
+                            "error", "Foglalás mentése sikertelen: " + e.getMessage()
+                    ));
         }
     }
-
 }
