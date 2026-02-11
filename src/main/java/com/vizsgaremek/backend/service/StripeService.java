@@ -18,7 +18,6 @@ public class StripeService {
     public StripeResponse checkoutBooking(BookingRequest bookingRequest) {
         Stripe.apiKey = secretKey;
 
-        // 1. ProductData létrehozása
         SessionCreateParams.LineItem.PriceData.ProductData productData =
                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                         .setName(bookingRequest.getName())
@@ -37,11 +36,20 @@ public class StripeService {
                         .setPriceData(priceData)
                         .build();
 
+        // Metadata hozzáadása - foglalási adatok tárolása
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:4200/success") // Angular frontend URL
-                .setCancelUrl("http://localhost:4200/cancel")   // Angular frontend URL
+                .setSuccessUrl("http://localhost:4200/booking/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl("http://localhost:4200/booking/cancel")
                 .addLineItem(lineItem)
+                .putMetadata("parkingSpotId", String.valueOf(bookingRequest.getParkingSpotId()))
+                .putMetadata("userId", String.valueOf(bookingRequest.getUserId()))
+                .putMetadata("startTime", bookingRequest.getStartTime())
+                .putMetadata("endTime", bookingRequest.getEndTime())
+                .putMetadata("licensePlate", bookingRequest.getLicensePlate())
+                .putMetadata("carBrand", bookingRequest.getCarBrand())
+                .putMetadata("carModel", bookingRequest.getCarModel())
+                .putMetadata("carColor", bookingRequest.getCarColor())
                 .build();
 
         Session session = null;
@@ -61,5 +69,10 @@ public class StripeService {
                 .sessionID(session.getId())
                 .sessionURL(session.getUrl())
                 .build();
+    }
+
+    public Session verifySession(String sessionId) throws StripeException {
+        Stripe.apiKey = secretKey;
+        return Session.retrieve(sessionId);
     }
 }

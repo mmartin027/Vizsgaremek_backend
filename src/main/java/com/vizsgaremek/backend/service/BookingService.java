@@ -1,6 +1,7 @@
 package com.vizsgaremek.backend.service;
 
 import com.vizsgaremek.backend.DTO.BookingDto;
+import com.vizsgaremek.backend.mapper.BookingMapper;
 import com.vizsgaremek.backend.model.Booking;
 import com.vizsgaremek.backend.model.ParkingSpot;
 import com.vizsgaremek.backend.model.User;
@@ -8,6 +9,7 @@ import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.repository.ParkingSpotRepository;
 import com.vizsgaremek.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
+    private final BookingMapper bookingMapper;
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -70,14 +73,16 @@ public class BookingService {
             throw new RuntimeException("A parkoló megtelt ebben az időintervallumban!");
         }
 
+
+
         User user = null;
         if (bookingDto.getUserId() != null) {
             System.out.println(" UserId NEM null, keresés az adatbázisban: " + bookingDto.getUserId());
-            user = userRepository.findById(bookingDto.getUserId())
+            user = userRepository.findById(Math.toIntExact(bookingDto.getUserId()))
                     .orElseThrow(() -> new RuntimeException("Felhasználó nem található ID-val: " + bookingDto.getUserId()));
             System.out.println(" User találva: " + user.getUsername() + " (ID: " + user.getId() + ")");
         } else {
-            System.out.println("⚠️ FIGYELEM: UserId NULL érkezett a BookingDto-ban!");
+            System.out.println("⚠ FIGYELEM: UserId NULL érkezett a BookingDto-ban!");
         }
 
         long hours = Duration.between(bookingDto.getStartTime(), bookingDto.getEndTime()).toHours();
@@ -131,6 +136,27 @@ public class BookingService {
             parkingSpotRepository.save(parkingSpot);
         }
     }
+
+
+    public BookingDto extendBooking(Long bookingId, Integer additionalMinutes) {
+        Booking booking = bookingRepository.findById(Math.toIntExact(bookingId))
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található"));
+
+        booking.setEndTime(booking.getEndTime().plus(Duration.ofMinutes(additionalMinutes)));
+
+        long newHours = Duration.between(booking.getStartTime(), booking.getEndTime()).toHours();
+        booking.setHours((int) newHours);
+
+        Integer newTotalPrice = calculatePrice(booking.getParkingSpot(), (int) newHours);
+        booking.setTotalPrice(newTotalPrice);
+
+        booking.setIsExtended(true);
+        booking.setUpdatedAt(Instant.now());
+
+        Booking updated = bookingRepository.save(booking);
+        return bookingMapper.toDto(updated);  // ← Most már működik!
+    }
+
 
     private boolean isParkingSpotAvailable(ParkingSpot parkingSpot, Instant startTime, Instant endTime) {
         List<Booking> activeBookings = bookingRepository.findActiveBookingsInTimeRange(

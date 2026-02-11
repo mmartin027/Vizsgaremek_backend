@@ -18,7 +18,7 @@ public class BookingDto implements Serializable {
     private String zoneName;
 
     // User adatok
-    private Integer userId;
+    private Long userId;
     private String userName;
     private String userEmail;
 

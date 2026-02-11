@@ -20,7 +20,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     Optional<Booking> findByAccessCode(String accessCode);
 
-    // Ez a metódus okozta az összeomlást. A @Query-vel megmondjuk pontosan, mit keressen.
     @Query("SELECT b FROM Booking b WHERE b.parkingSpot.id = :spotId " +
             "AND b.status != 'CANCELLED' " +
             "AND ((b.startTime < :end AND b.endTime > :start))")

@@ -1,10 +1,13 @@
 package com.vizsgaremek.backend.controler;
 
 import com.vizsgaremek.backend.DTO.BookingDto;
+import com.vizsgaremek.backend.DTO.ExtendedBookingDTO;
+import com.vizsgaremek.backend.mapper.BookingMapper;
 import com.vizsgaremek.backend.model.Booking;
 import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.service.BookingService;
 import com.vizsgaremek.backend.service.ParkingSpotService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,12 @@ public class BookingController {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+
+        @Autowired
+        private BookingMapper bookingMapper;
+
+
 
     @Autowired
     private ParkingSpotService parkingSpotService;
@@ -123,44 +132,19 @@ public class BookingController {
     }
 
 
+
+    @PatchMapping("/{bookingId}/extend")
+    public ResponseEntity<BookingDto> extendBooking(
+            @PathVariable Long bookingId,  // vagy Integer, attól függ mi van az entity-ben
+        @Valid @RequestBody ExtendedBookingDTO request
+    ) {
+        BookingDto extended = bookingService.extendBooking(bookingId, request.getAdditionalMinutes());
+        return ResponseEntity.ok(extended);
+    }
+
     private BookingDto convertToDto(Booking booking) {
-        BookingDto dto = new BookingDto();
-        dto.setId(booking.getId());
-
-        if (booking.getParkingSpot() != null) {
-            dto.setParkingSpotId(booking.getParkingSpot().getId());
-            dto.setParkingSpotName(booking.getParkingSpot().getName());
-            dto.setParkingSpotAddress(booking.getParkingSpot().getAddress());
-        }
-
-        if (booking.getUser() != null) {
-            dto.setUserId(Math.toIntExact(booking.getUser().getId()));
-            dto.setUserName(booking.getUser().getUsername());
-            dto.setUserEmail(booking.getUser().getEmail());
-        }
-
-        dto.setStartTime(booking.getStartTime());
-        dto.setEndTime(booking.getEndTime());
-        dto.setHours(booking.getHours());
-        dto.setTotalPrice(booking.getTotalPrice());
-
-        // Autó adatok
-        dto.setLicensePlate(booking.getLicensePlate());
-        dto.setCarBrand(booking.getCarBrand());
-        dto.setCarModel(booking.getCarModel());
-        dto.setCarColor(booking.getCarColor());
-
-        // Státusz és extra
-        dto.setStatus(booking.getStatus());
-        dto.setQrCode(booking.getQrCode());
-        dto.setAccessCode(booking.getAccessCode());
-        dto.setIsExtended(booking.getIsExtended());
-
-        // Időbélyegek
-        dto.setCreatedAt(booking.getCreatedAt());
-        dto.setUpdatedAt(booking.getUpdatedAt());
-        dto.setCancelledAt(booking.getCancelledAt());
-
-        return dto;
+        return bookingMapper.toDto(booking);
     }
 }
+
+
