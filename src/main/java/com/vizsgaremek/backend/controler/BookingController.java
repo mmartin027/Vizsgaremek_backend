@@ -36,9 +36,7 @@ public class BookingController {
     @Autowired
     private ParkingSpotService parkingSpotService;
 
-    /**
-     * Összes foglalás lekérdezése
-     */
+
     @GetMapping("/all")
     public ResponseEntity<List<BookingDto>> getAllBookings() {
         List<Booking> bookings = bookingService.getAllBookings();
@@ -132,10 +130,9 @@ public class BookingController {
     }
 
 
-
     @PatchMapping("/{bookingId}/extend")
     public ResponseEntity<BookingDto> extendBooking(
-            @PathVariable Long bookingId,  // vagy Integer, attól függ mi van az entity-ben
+            @PathVariable Long bookingId,
         @Valid @RequestBody ExtendedBookingDTO request
     ) {
         BookingDto extended = bookingService.extendBooking(bookingId, request.getAdditionalMinutes());

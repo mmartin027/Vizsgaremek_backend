@@ -23,25 +23,19 @@ public class BookingCheckoutController {
     @Autowired
     private BookingService bookingService;
 
-   
     @PostMapping("/create-session")
     public ResponseEntity<?> createCheckoutSession(
             @RequestBody BookingDto bookingDto,
             @RequestParam Integer parkingSpotId) {
         try {
-            String sessionId = stripeService.createCheckoutSession(bookingDto, parkingSpotId);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("sessionId", sessionId);
-
-            return ResponseEntity.ok(response);
+            Map<String, String> response = stripeService.createCheckoutSession(bookingDto, parkingSpotId);
+            return ResponseEntity.ok(response); // ✅ Most már sessionId ÉS url is visszajön
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
         }
     }
-
     /**
      * 2. LÉPÉS: Fizetés sikeres → Foglalás mentése
      */
