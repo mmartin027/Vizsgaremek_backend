@@ -56,4 +56,6 @@ public class ParkingSpotService {
 
         return convertToDto(spot);
     }
+
+
 }

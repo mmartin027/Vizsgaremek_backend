@@ -1,6 +1,7 @@
 package com.vizsgaremek.backend.controler;
 
 import com.vizsgaremek.backend.DTO.BookingDto;
+import com.vizsgaremek.backend.DTO.ExtendedBookingDTO;
 import com.vizsgaremek.backend.service.BookingService;
 import com.vizsgaremek.backend.service.StripeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,60 +24,106 @@ public class BookingCheckoutController {
     @Autowired
     private BookingService bookingService;
 
+    /**
+     * Stripe Session létrehozása FOGLALÁSHOZ
+     */
     @PostMapping("/create-session")
     public ResponseEntity<?> createCheckoutSession(
             @RequestBody BookingDto bookingDto,
             @RequestParam Integer parkingSpotId) {
         try {
             Map<String, String> response = stripeService.createCheckoutSession(bookingDto, parkingSpotId);
-            return ResponseEntity.ok(response); // ✅ Most már sessionId ÉS url is visszajön
-
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
     /**
-     * 2. LÉPÉS: Fizetés sikeres → Foglalás mentése
+     *  ÚJ: Stripe Session létrehozása HOSSZABBÍTÁSHOZ
+     */
+    @PostMapping("/create-extension-session")
+    public ResponseEntity<?> createExtensionSession(
+            @RequestParam Long bookingId,
+            @RequestParam Integer additionalMinutes) {
+        try {
+            Map<String, String> response = stripeService.createExtensionSession(bookingId, additionalMinutes);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Fizetés megerősítése FOGLALÁSHOZ
      */
     @PostMapping("/confirm-payment")
     public ResponseEntity<?> confirmPayment(@RequestParam String sessionId) {
         try {
-            // 1. Stripe session adatok lekérése
             Map<String, String> metadata = stripeService.retrieveSession(sessionId);
 
-            // 2. BookingDto újraépítése a metadata-ból
-            BookingDto bookingDto = new BookingDto();
-            bookingDto.setLicensePlate(metadata.get("licensePlate"));
-            bookingDto.setCarBrand(metadata.get("carBrand"));
-            bookingDto.setCarModel(metadata.get("carModel"));
-            bookingDto.setCarColor(metadata.get("carColor"));
-            bookingDto.setStartTime(Instant.parse(metadata.get("startTime")));
-            bookingDto.setEndTime(Instant.parse(metadata.get("endTime")));
+            String type = metadata.get("type");
 
-            if (metadata.containsKey("userId")) {
-                bookingDto.setUserId(Long.parseLong(metadata.get("userId")));
+            if ("booking".equals(type)) {
+                // Normál foglalás mentése
+                return confirmBookingPayment(metadata);
+            } else if ("extension".equals(type)) {
+                // Hosszabbítás mentése
+                return confirmExtensionPayment(metadata);
+            } else {
+                throw new RuntimeException("Ismeretlen fizetési típus: " + type);
             }
-
-            Integer parkingSpotId = Integer.parseInt(metadata.get("parkingSpotId"));
-
-            // 3. Foglalás mentése az adatbázisba
-            String accessCode = bookingService.createBooking(parkingSpotId, bookingDto);
-
-            // 4. Sikeres válasz
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("accessCode", accessCode);
-            response.put("message", "Fizetés sikeres! Foglalás létrehozva.");
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            "success", false,
-                            "error", "Foglalás mentése sikertelen: " + e.getMessage()
-                    ));
+                    .body(Map.of("success", false, "error", e.getMessage()));
         }
+    }
+
+    /**
+     * Foglalás fizetés megerősítése és mentése
+     */
+    private ResponseEntity<?> confirmBookingPayment(Map<String, String> metadata) {
+        BookingDto bookingDto = new BookingDto();
+        bookingDto.setLicensePlate(metadata.get("licensePlate"));
+        bookingDto.setCarBrand(metadata.get("carBrand"));
+        bookingDto.setCarModel(metadata.get("carModel"));
+        bookingDto.setCarColor(metadata.get("carColor"));
+        bookingDto.setStartTime(Instant.parse(metadata.get("startTime")));
+        bookingDto.setEndTime(Instant.parse(metadata.get("endTime")));
+
+        if (metadata.containsKey("userId")) {
+            bookingDto.setUserId(Long.parseLong(metadata.get("userId")));
+        }
+
+        Integer parkingSpotId = Integer.parseInt(metadata.get("parkingSpotId"));
+        String accessCode = bookingService.createBooking(parkingSpotId, bookingDto);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("accessCode", accessCode);
+        response.put("message", "Fizetés sikeres! Foglalás létrehozva.");
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * : Hosszabbítás fizetés megerősítése és mentése
+     */
+    private ResponseEntity<?> confirmExtensionPayment(Map<String, String> metadata) {
+        Long bookingId = Long.parseLong(metadata.get("bookingId"));
+        Integer additionalMinutes = Integer.parseInt(metadata.get("additionalMinutes"));
+
+        // Foglalás hosszabbítása az adatbázisban
+        BookingDto updatedBooking = bookingService.extendBooking(bookingId, additionalMinutes);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("booking", updatedBooking);
+        response.put("message", "Fizetés sikeres! Foglalás hosszabbítva.");
+
+        return ResponseEntity.ok(response);
     }
 }

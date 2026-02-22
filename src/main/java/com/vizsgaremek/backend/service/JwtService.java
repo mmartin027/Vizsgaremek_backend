@@ -74,7 +74,6 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // ÚJ - userId kinyerése tokenből
     public Long extractUserId(String token) {
         final Claims claims = extractAllClaims(token);
         Object userIdObj = claims.get("userId");
