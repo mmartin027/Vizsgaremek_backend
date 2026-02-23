@@ -65,8 +65,15 @@ public class ParkingSpotController {
                     Map<String, Object> properties = new HashMap<>();
                     properties.put("id", spot.getId());
                     properties.put("name", spot.getName());
-                    properties.put("zoneName", spot.getZoneName());
-                    properties.put("zoneCode", spot.getZoneCode());
+                    if (spot.getZone() != null) {
+                        properties.put("zoneName", spot.getZone().getName());
+                        properties.put("zoneCode", spot.getZone().getZoneCode());
+                        properties.put("hourlyRate", spot.getZone().getHourlyRate());
+                    } else {
+                        properties.put("zoneName", "Nincs zóna");
+                        properties.put("zoneCode", "N/A");
+                        properties.put("hourlyRate", spot.getHourlyRate());
+                    }
                     properties.put("address", spot.getAddress());
                     properties.put("hourlyRate", spot.getHourlyRate());
                     properties.put("capacity", spot.getCapacity());

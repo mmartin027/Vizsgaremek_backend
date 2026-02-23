@@ -1,14 +1,16 @@
 package com.vizsgaremek.backend.model;
 
+import com.vizsgaremek.backend.model.City;
+import com.vizsgaremek.backend.model.Zone;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-
-
+import com.vizsgaremek.backend.model.Zone;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
 @Getter
 @Setter
@@ -20,17 +22,20 @@ public class ParkingSpot {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     private City city;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zone_id")
+    private Zone zone;
+
+
+    @Size(max = 200)
     @Column(name = "name", length = 200)
     private String name;
 
+    @Size(max = 255)
     @Column(name = "address")
     private String address;
 
@@ -39,6 +44,7 @@ public class ParkingSpot {
 
     @Column(name = "longitude", precision = 11, scale = 8)
     private BigDecimal longitude;
+
 
     @Column(name = "hourly_rate")
     private Integer hourlyRate;
@@ -57,15 +63,8 @@ public class ParkingSpot {
     private String types;
 
     @ColumnDefault("'OUTDOOR'")
-    @Lob
     @Column(name = "parking_type")
     private String parkingType;
-
-    @Column(name = "zone_name", length = 100)
-    private String zoneName;
-
-    @Column(name = "zone_code", length = 20)
-    private String zoneCode;
 
     @Lob
     @Column(name = "features")
@@ -101,21 +100,22 @@ public class ParkingSpot {
     @Column(name = "is_active")
     private Boolean isActive;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    @NotNull
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @NotNull
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    private Instant updatedAt = Instant.now();
 
-
-    @OneToMany(mappedBy = "parkingSpot")
-    private List<Booking> bookings;
-
-    public String getMainImageUrl() {
-        return mainImageUrl;
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
     }
 
-
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
 }

@@ -9,7 +9,6 @@ import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.repository.ParkingSpotRepository;
 import com.vizsgaremek.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -21,6 +21,13 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
 
     Optional<ParkingSpot> findByIdAndIsActiveTrue(Integer id);
 
+    List<ParkingSpot> findByZone_IdAndIsActiveTrue(Integer zoneId);
+
+
+    Optional<ParkingSpot> findByZone_ZoneCodeAndIsActiveTrue(String zoneCode);
+
+    List<ParkingSpot> findByZone_NameContainingIgnoreCaseAndIsActiveTrue(String zoneName);
+
     Optional<ParkingSpot> findByNameIgnoreCase(String name);
 
     List<ParkingSpot> findByAddressContainingIgnoreCaseAndIsActiveTrue(String address);
@@ -40,16 +47,11 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
 
 
 
+
     List<ParkingSpot> findByParkingTypeAndIsActiveTrue(ParkingType parkingType);
 
 
     List<ParkingSpot> findByCityIdAndParkingTypeAndIsActiveTrue(Integer cityId, ParkingType parkingType);
-
-
-    Optional<ParkingSpot> findByZoneCodeAndIsActiveTrue(String zoneCode);
-
-
-    List<ParkingSpot> findByZoneNameContainingIgnoreCaseAndIsActiveTrue(String zoneName);
 
 
     @Query("SELECT p FROM ParkingSpot p WHERE p.parkingType = :parkingType " +
@@ -84,6 +86,6 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
 
     @Query("SELECT p FROM ParkingSpot p WHERE p.city.id = :cityId " +
             "AND p.parkingType = 'OUTDOOR' AND p.isActive = true " +
-            "ORDER BY p.zoneName")
+            "ORDER BY p.zone.id")
     List<ParkingSpot> findOutdoorZonesByCity(@Param("cityId") Integer cityId);
 }

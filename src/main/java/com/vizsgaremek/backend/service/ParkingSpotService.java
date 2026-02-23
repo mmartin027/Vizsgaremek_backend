@@ -42,9 +42,11 @@ public class ParkingSpotService {
                 spot.getId(),
                 spot.getName(),
                 spot.getAddress(),
-                spot.getHourlyRate(),
+                spot.getZone() != null ? spot.getZone().getHourlyRate() : spot.getHourlyRate(), // Ár a zónából
                 spot.getFeatures(),
-                fullImageUrl
+                fullImageUrl,
+                spot.getZone() != null ? spot.getZone().getName() : null,
+                spot.getZone() != null ? spot.getZone().getZoneCode() : null
         );
     }
 

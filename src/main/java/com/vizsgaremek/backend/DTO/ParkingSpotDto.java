@@ -1,15 +1,15 @@
 package com.vizsgaremek.backend.DTO;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-
 @Data
+@NoArgsConstructor // Szükséges a keretrendszereknek
 public class ParkingSpotDto implements Serializable {
 
-    // Alapadatok
     private Integer id;
     private String name;
     private String address;
@@ -18,11 +18,13 @@ public class ParkingSpotDto implements Serializable {
     private BigDecimal latitude;
     private BigDecimal longitude;
 
-    // Város adatok
+    // Város és Zóna azonosítók
     private Integer cityId;
     private String cityName;
+    private Integer zoneId;      // ÚJ: Az adatbázis kapcsolathoz
+    private String zoneMapId;   // ÚJ: A MapTiler-es összekötéshez
 
-    // Típus és zóna
+    // Típus és zóna megjelenítés
     private String parkingType;
     private String zoneName;
     private String zoneCode;
@@ -35,37 +37,33 @@ public class ParkingSpotDto implements Serializable {
     // Kapacitás
     private Integer capacity;
     private Integer occupiedSpaces;
-    private Integer availableSpaces;   // Számított mező: capacity - occupiedSpaces
+    private Integer availableSpaces;
 
-    // Távolság
-    private Integer distanceFromCenter;
-
-    // Tulajdonságok
+    // Tulajdonságok és leírás
     private String features;
     private String description;
-
-    // Képek
     private String main_Image_Url;
     private String imageGallery;
 
-    // Értékelés
+    // Értékelés és állapot
     private BigDecimal rating;
     private Integer ratingCount;
-
-    // Aktív-e
     private Boolean isActive;
 
     // Időbélyegek
     private Instant createdAt;
     private Instant updatedAt;
 
-    public ParkingSpotDto(Integer id, String name, String address, Integer hourlyRate, String features, String fullImageUrl) {
+    // FRISSÍTETT KONSTRUKTOR a Service-hez
+    public ParkingSpotDto(Integer id, String name, String address, Integer hourlyRate,
+                          String features, String fullImageUrl, String zoneName, String zoneCode) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.hourlyRate = hourlyRate;
         this.features = features;
         this.main_Image_Url = fullImageUrl;
-
+        this.zoneName = zoneName; // Most már ezt is átadjuk
+        this.zoneCode = zoneCode; // Most már ezt is átadjuk
     }
 }
