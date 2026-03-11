@@ -65,18 +65,19 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**","/images/**","/api/bookings/**","/images/**","/api/booking/**","/api/checkout/**","/api/zones/**").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**","/images/**","/api/zones/**", "/api/checkout/webhook").permitAll()
+
+                        //védettek
+                        .requestMatchers("/api/booking/**","/api/checkout/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-
-                        // ha a SuccessHandler jól irányít át.
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
-                        // 3. JAVÍTVA: Kösd be a saját handleredet!
                         .successHandler(oAuth2LoginSuccessHandler)
                 )
                 .exceptionHandling(exception -> exception

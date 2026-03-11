@@ -14,8 +14,10 @@ import java.util.Optional;
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Integer> {
 
 
+    Optional<ParkingSpot> findByUuid(String uuid);
 
     List<ParkingSpot> findByCityIdAndIsActiveTrue(Integer cityId);
+
 
     List<ParkingSpot> findByCity_NameContainingIgnoreCaseAndIsActiveTrue(String cityName);
 

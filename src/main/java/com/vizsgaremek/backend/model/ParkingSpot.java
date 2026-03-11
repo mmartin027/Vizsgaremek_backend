@@ -100,6 +100,10 @@ public class ParkingSpot {
     @Column(name = "is_active")
     private Boolean isActive;
 
+
+    @Column(name = "uuid", length = 36, unique = true)
+    private String uuid;
+
     @NotNull
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

@@ -3,9 +3,11 @@ package com.vizsgaremek.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "user") // Cseréld le a tényleges tábla nevedre!
+@Table(name = "user")
 @Data
 public class User {
 
@@ -31,18 +33,25 @@ public class User {
     @Column(name = "phone")
     private String phone;
 
-
     @Column(name = "auth_secret")
-    private String authSecret = "";  // <-- ALAPÉRTELMEZETT ÉRTÉK!
+    private String authSecret = "";
 
     @Column(name = "guid")
     private String guid;
 
     @Column(name = "provider")
-    private String provider = "local";  // <-- ALAPÉRTELMEZETT ÉRTÉK!
+    private String provider = "local";
 
     @Column(name = "reg_token")
     private String regToken;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_x_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -51,7 +60,7 @@ public class User {
     private LocalDateTime deletedAt;
 
     @Column(name = "is_deleted")
-    private Boolean isDeleted = false;  // <-- ALAPÉRTELMEZETT ÉRTÉK!
+    private Boolean isDeleted = false;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
@@ -71,7 +80,7 @@ public class User {
             guid = java.util.UUID.randomUUID().toString();
         }
         if (authSecret == null) {
-            authSecret = "";  // <-- FONTOS!
+            authSecret = "";
         }
         if (provider == null) {
             provider = "local";

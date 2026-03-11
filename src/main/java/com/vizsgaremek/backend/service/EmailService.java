@@ -1,10 +1,9 @@
 package com.vizsgaremek.backend.service;
 
-import com.vizsgaremek.backend.DTO.MailBody;
+import com.vizsgaremek.backend.DTO.MailBodyDTO;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import com.vizsgaremek.backend.controler.ForgotPasswordController;
 
 @Service
 public class EmailService {
@@ -15,10 +14,10 @@ public class EmailService {
         this.javaMailSender = javaMailSender;
     }
 
-    public void sendSimpleMessage(MailBody mailBody){
+    public void sendSimpleMessage(MailBodyDTO mailBody){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(mailBody.to());
-        message.setFrom("martinmalaj307@gmail.com");
+        message.setFrom("${MAIL_USERNAME}");
         message.setSubject(mailBody.subject());
         message.setText(mailBody.text());
 

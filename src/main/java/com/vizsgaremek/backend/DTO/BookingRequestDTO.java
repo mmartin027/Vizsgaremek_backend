@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingRequest {
+public class BookingRequestDTO {
     private Long amount;
     private  Long quantity;
     private String name;

@@ -33,7 +33,7 @@ public class Payment {
     private String status = "pending";
 
 
-    @Column(name = "transaction_id")
+    @Column(name = "transaction_id",unique = true)
     private String transactionId;
 
     @Column(name = "card_last4", length = 4)

@@ -27,9 +27,10 @@ public class ParkingSpotController {
         return ResponseEntity.ok(service.searchByCity(cityId));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ParkingSpotDto> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(service.getById(id));
+
+    @GetMapping("/{identifier}")
+    public ResponseEntity<ParkingSpotDto> getByIdentifier(@PathVariable String identifier) {
+        return ResponseEntity.ok(service.getByIdentifier(identifier));
     }
 
         @GetMapping("/map-zones")
@@ -37,34 +38,34 @@ public class ParkingSpotController {
             try {
                 List<ParkingSpot> spots = parkingSpotRepository.findAll();
 
-                // GeoJSON FeatureCollection létrehozása
                 Map<String, Object> geoJson = new HashMap<>();
                 geoJson.put("type", "FeatureCollection");
 
                 List<Map<String, Object>> features = new ArrayList<>();
 
                 for (ParkingSpot spot : spots) {
-                    // Csak aktív és geolokációval rendelkező spotok
                     if (!spot.getIsActive() || spot.getLatitude() == null || spot.getLongitude() == null) {
                         continue;
                     }
 
                     Map<String, Object> feature = new HashMap<>();
                     feature.put("type", "Feature");
+                    feature.put("id", spot.getId());
 
-                    // Geometry (pont koordináták)
                     Map<String, Object> geometry = new HashMap<>();
                     geometry.put("type", "Point");
                     geometry.put("coordinates", Arrays.asList(
-                            spot.getLongitude().doubleValue(),  // lng először!
-                            spot.getLatitude().doubleValue()    // lat másodszor!
+                            spot.getLongitude().doubleValue(),
+                            spot.getLatitude().doubleValue()
                     ));
                     feature.put("geometry", geometry);
+                    // ------------------------------------------------------
 
-                    // Properties (adatok a térképhez)
                     Map<String, Object> properties = new HashMap<>();
                     properties.put("id", spot.getId());
+                    properties.put("uuid", spot.getUuid());
                     properties.put("name", spot.getName());
+
                     if (spot.getZone() != null) {
                         properties.put("zoneName", spot.getZone().getName());
                         properties.put("zoneCode", spot.getZone().getZoneCode());
@@ -74,19 +75,30 @@ public class ParkingSpotController {
                         properties.put("zoneCode", "N/A");
                         properties.put("hourlyRate", spot.getHourlyRate());
                     }
+
                     properties.put("address", spot.getAddress());
-                    properties.put("hourlyRate", spot.getHourlyRate());
-                    properties.put("capacity", spot.getCapacity());
-                    properties.put("occupiedSpaces", spot.getOccupiedSpaces());
-                    properties.put("availableSpaces", spot.getCapacity() - spot.getOccupiedSpaces());
                     properties.put("parkingType", spot.getParkingType() != null ? spot.getParkingType().toString() : "OUTDOOR");
                     properties.put("features", spot.getFeatures());
                     properties.put("rating", spot.getRating());
-                    properties.put("imageUrl", spot.getMainImageUrl());
+
+                    int capacity = spot.getCapacity() != null ? spot.getCapacity() : 0;
+                    int occupied = spot.getOccupiedSpaces() != null ? spot.getOccupiedSpaces() : 0;
+
+                    properties.put("capacity", capacity);
+                    properties.put("occupiedSpaces", occupied);
+                    properties.put("availableSpaces", Math.max(0, capacity - occupied));
+
+                    // Kép URL javítása
+                    String imageUrl = spot.getMainImageUrl();
+                    if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.startsWith("http")) {
+                        imageUrl = "http://localhost:8080/images/" + imageUrl;
+                    }
+                    properties.put("imageUrl", imageUrl);
 
                     feature.put("properties", properties);
                     features.add(feature);
                 }
+
 
                 geoJson.put("features", features);
 

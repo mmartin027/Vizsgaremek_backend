@@ -15,7 +15,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     List<Booking> findByParkingSpotId(Integer parkingSpotId);
 
-    // Mivel az entitásban String status van, itt is String-et használunk
+
+    boolean existsByParkingSpotIdAndStatus(Integer parkingSpotId, String status);
+
     List<Booking> findByStatus(Enum status);
 
     Optional<Booking> findByAccessCode(String accessCode);

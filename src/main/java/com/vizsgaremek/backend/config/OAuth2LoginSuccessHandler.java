@@ -1,6 +1,7 @@
 package com.vizsgaremek.backend.config;
 
 import com.vizsgaremek.backend.model.User;
+import com.vizsgaremek.backend.model.UserPrincipal;
 import com.vizsgaremek.backend.repository.UserRepository;
 import com.vizsgaremek.backend.service.JwtService;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import com.vizsgaremek.backend.repository.RoleRepository;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -18,8 +20,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Component
-
-
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     @Autowired
@@ -28,6 +28,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
@@ -35,55 +38,36 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");
-            String name = oAuth2User.getAttribute("name");
-            String picture = oAuth2User.getAttribute("picture");
 
-            System.out.println("Sikeres Google login: " + email);
+            User user = userRepository.findByEmail(email).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setEmail(email);
+                newUser.setUsername(email);
+                newUser.setProvider("GOOGLE");
+                // ... (név beállítások maradhatnak) ...
 
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> {
-                        User newUser = new User();
-                        newUser.setEmail(email);
-                        newUser.setUsername(email);
+                roleRepository.findByName("ROLE_USER").ifPresent(role -> {
+                    // Hozzáadjuk a felhasználóhoz (a User entitásodban lévő Set<Role> roles mezőbe)
+                    newUser.getRoles().add(role);
+                });
 
-                        if (name != null && name.contains(" ")) {
-                            String[] nameParts = name.split(" ", 2);
-                            newUser.setFirstName(nameParts[0]);
-                            newUser.setLastName(nameParts[1]);
-                        } else {
-                            newUser.setFirstName(name != null ? name : "");
-                            newUser.setLastName("");
-                        }
+                return userRepository.save(newUser);
+            });
 
-                        newUser.setProvider("GOOGLE");
-                        newUser.setPassword(null);
-                        newUser.setAuthSecret(UUID.randomUUID().toString());
-                        newUser.setPhone("");
-                        newUser.setGuid(UUID.randomUUID().toString());
-
-                        // JAVÍTVA: LocalDateTime.now() használata
-                        newUser.setCreatedAt(LocalDateTime.now());
-                        newUser.setIsDeleted(false);
-                        newUser.setRegToken(UUID.randomUUID().toString());
-                        newUser.setRegisterFinishedAt(LocalDateTime.now());
-
-                        return userRepository.save(newUser);
-                    });
-
-            // JAVÍTVA: Itt is LocalDateTime.now()
+            // 2. Utolsó belépés frissítése
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-            String token = jwtService.generateToken(user.getEmail(),user.getId());
 
-            String targetUrl = "http://localhost:4200/login-success?token=" + token;
+            UserPrincipal userPrincipal = new UserPrincipal(user);
 
-            System.out.println("Átirányítás ide: " + targetUrl);
+            String token = jwtService.generateToken(userPrincipal,(user.getId()));
+
+            String targetUrl = "http://localhost:4200/login-success#token=" + token;
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception e) {
-            System.err.println("Hiba a Success Handlerben: " + e.getMessage());
-            e.printStackTrace();
             response.sendRedirect("http://localhost:4200/login?error=oauth2_error");
         }
-    }}
+    }
+}

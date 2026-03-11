@@ -78,7 +78,8 @@ public class BookingController {
             @PathVariable Integer parkingSpotId,
             @RequestBody BookingDto bookingDto) {
         try {
-            String accessCode = bookingService.createBooking(parkingSpotId, bookingDto);
+            String accessCode = bookingService.createBooking(parkingSpotId, bookingDto, null);
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body("Foglalás sikerült! Megerősítő kód: " + accessCode);
         } catch (Exception e) {

@@ -4,9 +4,11 @@ import com.vizsgaremek.backend.DTO.BookingDto;
 import com.vizsgaremek.backend.mapper.BookingMapper;
 import com.vizsgaremek.backend.model.Booking;
 import com.vizsgaremek.backend.model.ParkingSpot;
+import com.vizsgaremek.backend.model.Payment;
 import com.vizsgaremek.backend.model.User;
 import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.repository.ParkingSpotRepository;
+import com.vizsgaremek.backend.repository.PaymentRepository;
 import com.vizsgaremek.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class BookingService {
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
+    private final PaymentRepository paymentRepository;
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -58,65 +61,74 @@ public class BookingService {
         return bookingRepository.findByStatus(status);
     }
 
+
+
     @Transactional
-    public String createBooking(Integer parkingSpotId, BookingDto bookingDto) {
-        // 1. Validáció: időpontok ellenőrzése
+    public String createBooking(Integer parkingSpotId, BookingDto bookingDto,String stripePaymentId) {
         if (bookingDto.getEndTime().isBefore(bookingDto.getStartTime())) {
             throw new RuntimeException("A kezdő dátum nem lehet később mint a záró dátum!");
         }
 
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId)
-                .orElseThrow(() -> new RuntimeException("Parkoló nem található ID-val: " + parkingSpotId));
+                .orElseThrow(() -> new RuntimeException("Parkoló nem található."));
 
         if (!isParkingSpotAvailable(parkingSpot, bookingDto.getStartTime(), bookingDto.getEndTime())) {
-            throw new RuntimeException("A parkoló megtelt ebben az időintervallumban!");
+            throw new RuntimeException("Sajnos közben betelt a parkoló!");
         }
-
-
 
         User user = null;
+
+        //  Ha a Webhook vagy az Angular küldött explicit userId-t a DTO-ban, azt használjuk!
         if (bookingDto.getUserId() != null) {
-            System.out.println(" UserId NEM null, keresés az adatbázisban: " + bookingDto.getUserId());
-            user = userRepository.findById(Math.toIntExact(bookingDto.getUserId()))
-                    .orElseThrow(() -> new RuntimeException("Felhasználó nem található ID-val: " + bookingDto.getUserId()));
-            System.out.println(" User találva: " + user.getUsername() + " (ID: " + user.getId() + ")");
-        } else {
-            System.out.println("⚠ FIGYELEM: UserId NULL érkezett a BookingDto-ban!");
+            user = userRepository.findById(bookingDto.getUserId().intValue()).orElse(null);
+        }
+        //  Ha nincs a DTO-ban userId, akkor megnézzük, be van-e jelentkezve valaki (normál API hívás)
+        else if (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null) {
+            String currentUsername = org.springframework.security.core.context.SecurityContextHolder
+                    .getContext().getAuthentication().getName();
+
+            if (!"anonymousUser".equals(currentUsername)) {
+                user = userRepository.findByUsername(currentUsername).orElse(null);
+            }
         }
 
+        // 4. Számítások
         long hours = Duration.between(bookingDto.getStartTime(), bookingDto.getEndTime()).toHours();
         if (hours == 0) hours = 1;
-
         Integer totalPrice = calculatePrice(parkingSpot, (int) hours);
 
         Booking booking = new Booking();
         booking.setParkingSpot(parkingSpot);
-        booking.setUser(user);  // Ez NULL lesz, ha userId null volt!
+        booking.setUser(user);
         booking.setStartTime(bookingDto.getStartTime());
         booking.setEndTime(bookingDto.getEndTime());
-        booking.setHours((int) hours);
         booking.setTotalPrice(totalPrice);
         booking.setLicensePlate(bookingDto.getLicensePlate());
-        booking.setCarBrand(bookingDto.getCarBrand());
-        booking.setCarModel(bookingDto.getCarModel());
-        booking.setCarColor(bookingDto.getCarColor());
         booking.setStatus("ACTIVE");
-        booking.setIsExtended(false);
-        booking.setCreatedAt(Instant.now());
-        booking.setUpdatedAt(Instant.now());
 
+  // 1. Előbb mentjük a booking-ot (mindig!)
         String confirmationCode = generateConfirmationCode();
         booking.setAccessCode(confirmationCode);
-
-        System.out.println("🔍 Booking mentése - User ID: " + (user != null ? user.getId() : "NULL"));
         bookingRepository.save(booking);
+
+  //  Ha van Stripe fizetés, utána mentjük a payment-et
+        if (stripePaymentId != null && !stripePaymentId.isEmpty()) {
+            Payment payment = new Payment();
+            payment.setBooking(booking);
+            payment.setTransactionId(stripePaymentId);
+            payment.setAmount(totalPrice);
+            payment.setStatus("SUCCESS");
+            payment.setPaymentMethod("stripe");
+            payment.setCreatedAt(Instant.now());
+            payment.setUpdatedAt(Instant.now());
+            paymentRepository.save(payment);
+        }
 
         parkingSpot.setOccupiedSpaces(parkingSpot.getOccupiedSpaces() + 1);
         parkingSpotRepository.save(parkingSpot);
 
         return confirmationCode;
     }
-
     @Transactional
     public void cancelBooking(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -153,7 +165,7 @@ public class BookingService {
         booking.setUpdatedAt(Instant.now());
 
         Booking updated = bookingRepository.save(booking);
-        return bookingMapper.toDto(updated);  // ← Most már működik!
+        return bookingMapper.toDto(updated);
     }
 
 

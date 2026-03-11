@@ -16,7 +16,7 @@ import java.util.Optional;
 public class ZoneService {
 
     private final ZoneRepository zoneRepository;
-    private final ZoneMapper zoneMapper; // Injektáljuk a mappert
+    private final ZoneMapper zoneMapper;
 
     public Optional<ZoneDto> getZoneByMapId(String mapId) {
         return zoneRepository.findByMapId(mapId)

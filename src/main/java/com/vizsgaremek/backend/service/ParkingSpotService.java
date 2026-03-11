@@ -19,8 +19,6 @@ public class ParkingSpotService {
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
-
-
     public List<ParkingSpotDto> searchByCity(Integer cityId) {
         return repository.findByCityIdAndIsActiveTrue(cityId).stream()
                 .map(this::convertToDto)
@@ -40,9 +38,10 @@ public class ParkingSpotService {
 
         return new ParkingSpotDto(
                 spot.getId(),
+                spot.getUuid(),
                 spot.getName(),
                 spot.getAddress(),
-                spot.getZone() != null ? spot.getZone().getHourlyRate() : spot.getHourlyRate(), // Ár a zónából
+                spot.getZone() != null ? spot.getZone().getHourlyRate() : spot.getHourlyRate(),
                 spot.getFeatures(),
                 fullImageUrl,
                 spot.getZone() != null ? spot.getZone().getName() : null,
@@ -50,14 +49,18 @@ public class ParkingSpotService {
         );
     }
 
-    public ParkingSpotDto getById(Integer id) {
+    public ParkingSpotDto getByIdentifier(String identifier) {
+        ParkingSpot spot;
 
-        ParkingSpot spot = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("A parkolóhely nem található ezzel az azonosítóval: " + id));
-
+        try {
+            Integer id = Integer.parseInt(identifier);
+            spot = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("A parkolóhely nem található ezzel az azonosítóval: " + id));
+        } catch (NumberFormatException e) {
+            spot = repository.findByUuid(identifier)
+                    .orElseThrow(() -> new RuntimeException("A parkolóhely nem található ezzel az UUID-vel: " + identifier));
+        }
 
         return convertToDto(spot);
     }
-
-
 }

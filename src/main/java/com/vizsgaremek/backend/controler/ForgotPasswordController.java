@@ -1,6 +1,6 @@
 package com.vizsgaremek.backend.controler;
 
-import com.vizsgaremek.backend.DTO.MailBody;
+import com.vizsgaremek.backend.DTO.MailBodyDTO;
 import com.vizsgaremek.backend.model.ForgotPassword;
 import com.vizsgaremek.backend.model.User;
 import com.vizsgaremek.backend.repository.ForgotPasswordRepository;
@@ -46,7 +46,7 @@ public class ForgotPasswordController {
         // OTP hashelése
         String otpHash = passwordEncoder.encode(String.valueOf(otp));
 
-        MailBody mailBody = new MailBody(
+        MailBodyDTO mailBody = new MailBodyDTO(
                 email,
                 "OTP for forgot password",
                 "A kódod: " + otp  // Eredeti OTP az emailben

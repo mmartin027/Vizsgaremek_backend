@@ -50,20 +50,22 @@ public class ParkingSpotDto implements Serializable {
     private Integer ratingCount;
     private Boolean isActive;
 
+    private String uuid;
     // Időbélyegek
     private Instant createdAt;
     private Instant updatedAt;
 
     // FRISSÍTETT KONSTRUKTOR a Service-hez
-    public ParkingSpotDto(Integer id, String name, String address, Integer hourlyRate,
+    public ParkingSpotDto(Integer id, String uuid, String name, String address, Integer hourlyRate,
                           String features, String fullImageUrl, String zoneName, String zoneCode) {
         this.id = id;
+        this.uuid = uuid; // <-- ÚJ
         this.name = name;
         this.address = address;
         this.hourlyRate = hourlyRate;
         this.features = features;
         this.main_Image_Url = fullImageUrl;
-        this.zoneName = zoneName; // Most már ezt is átadjuk
-        this.zoneCode = zoneCode; // Most már ezt is átadjuk
+        this.zoneName = zoneName;
+        this.zoneCode = zoneCode;
     }
 }

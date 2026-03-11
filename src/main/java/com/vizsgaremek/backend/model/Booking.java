@@ -15,10 +15,10 @@ public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id; // Ez a foglalás (Booking) sorszáma
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parking_spot_id") // Most már az adatbázisban is ez a neve
+    @JoinColumn(name = "parking_spot_id")
     private ParkingSpot parkingSpot;
 
     @ManyToOne(fetch = FetchType.LAZY)
