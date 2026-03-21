@@ -15,7 +15,8 @@ public class ZoneMapper {
                 zone.getName(),
                 zone.getZoneCode(),
                 zone.getHourlyRate(),
-                zone.getMapId()
+                zone.getMapId(),
+                zone.getPolygonData()
         );
     }
 
@@ -29,6 +30,7 @@ public class ZoneMapper {
         zone.setZoneCode(dto.getZoneCode());
         zone.setHourlyRate(dto.getHourlyRate());
         zone.setMapId(dto.getMapId());
+        zone.setPolygonData(dto.getPolygonData());
 
         return zone;
     }

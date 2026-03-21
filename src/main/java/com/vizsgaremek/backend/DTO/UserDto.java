@@ -10,20 +10,14 @@ import java.time.LocalDateTime;
  */
 @Value
 public class UserDto implements Serializable {
-    Long id;
-    String username;
-    String password;
-    String email;
-    String firstName;
-    String lastName;
-    String phone;
-    String authSecret;
-    String guid;
-    String provider;
-    String regToken;
-    LocalDateTime createdAt;
-    LocalDateTime deletedAt;
-    Boolean isDeleted;
-    LocalDateTime lastLogin;
-    LocalDateTime registerFinishedAt;
+    private Long id;
+    private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private String phone;
+    private String provider;
+    private LocalDateTime createdAt;
+    private LocalDateTime lastLogin;
+    private Boolean isDeleted;
 }

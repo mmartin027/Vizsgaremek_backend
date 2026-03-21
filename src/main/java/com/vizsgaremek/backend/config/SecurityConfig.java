@@ -65,11 +65,21 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/forgotPassword/**","/api/parking-spots/**","/images/**","/api/zones/**", "/api/checkout/webhook").permitAll()
+                        // 1. A nyilvános végpontok (A WEBHOOK-OT TEDD AZ ELEJÉRE!)
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/forgotPassword/**",
+                                "/api/parking-spots/**",
+                                "/images/**",
+                                "/api/zones/**",
+                                "/api/checkout/webhook"
+                        ).permitAll()
 
-                        //védettek
-                        .requestMatchers("/api/booking/**","/api/checkout/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
 
+                        .requestMatchers("/api/booking/**", "/api/checkout/**").authenticated()
+
+                        // 3. Minden egyéb
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

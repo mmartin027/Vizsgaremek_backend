@@ -30,7 +30,6 @@ public class JwtService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        //  Beletesszük a claim-ek közé a szerepköröket és a UserID-t
         claims.put("roles", roles);
         claims.put("userId", userId);
 
@@ -38,7 +37,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 óra
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 *15)) // 24 óra
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -61,8 +60,7 @@ public class JwtService {
         return (Long) userIdObj;
     }
 
-     // Kinyeri a szerepköröket a tokenből
-    @SuppressWarnings("unchecked")
+
     public List<String> extractRoles(String token) {
         final Claims claims = extractAllClaims(token);
         return (List<String>) claims.get("roles");

@@ -2,6 +2,7 @@ package com.vizsgaremek.backend.config;
 
 import com.vizsgaremek.backend.service.JwtService;
 import com.vizsgaremek.backend.service.UserDetailService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,7 +46,15 @@ public class    JwtFilter  extends OncePerRequestFilter {
 
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            userName = jwtService.extractUserName(token);
+            try {
+                userName = jwtService.extractUserName(token);
+            } catch (ExpiredJwtException e) {
+
+                System.out.println(" Lejárt JWT token: " + e.getMessage());
+            } catch (Exception e) {
+
+                System.out.println(" Érvénytelen JWT token: " + e.getMessage());
+            }
         }
 
         if(userName != null && SecurityContextHolder.getContext().getAuthentication()==null){

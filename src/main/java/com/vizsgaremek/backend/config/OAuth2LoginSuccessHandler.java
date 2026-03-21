@@ -15,12 +15,14 @@ import org.springframework.stereotype.Component;
 import com.vizsgaremek.backend.repository.RoleRepository;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Set; // Új import!
 import java.util.UUID;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+
 
     @Autowired
     private JwtService jwtService;
@@ -44,29 +46,37 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 newUser.setEmail(email);
                 newUser.setUsername(email);
                 newUser.setProvider("GOOGLE");
-                // ... (név beállítások maradhatnak) ...
+
+                // Google profil adatok kinyerése
+                newUser.setFirstName(oAuth2User.getAttribute("given_name"));
+                newUser.setLastName(oAuth2User.getAttribute("family_name"));
+
+                // Kötelező adatbázis mezők kitöltése (hogy a MySQL ne dobjon hibát!)
+                newUser.setGuid(UUID.randomUUID().toString());
+                newUser.setAuthSecret(UUID.randomUUID().toString());
+                newUser.setIsDeleted(false);
 
                 roleRepository.findByName("ROLE_USER").ifPresent(role -> {
-                    // Hozzáadjuk a felhasználóhoz (a User entitásodban lévő Set<Role> roles mezőbe)
-                    newUser.getRoles().add(role);
+                    newUser.setRoles(Set.of(role));
                 });
 
                 return userRepository.save(newUser);
             });
 
-            // 2. Utolsó belépés frissítése
             user.setLastLogin(LocalDateTime.now());
             userRepository.save(user);
 
-
             UserPrincipal userPrincipal = new UserPrincipal(user);
-
-            String token = jwtService.generateToken(userPrincipal,(user.getId()));
+            String token = jwtService.generateToken(userPrincipal, user.getId());
 
             String targetUrl = "http://localhost:4200/login-success#token=" + token;
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception e) {
+            // MOST MÁR LÁTNI FOGJUK A KONZOLON, HA HIBA VAN!
+            System.err.println(" HIBA A GOOGLE BEJELENTKEZÉS SORÁN:");
+            e.printStackTrace();
+
             response.sendRedirect("http://localhost:4200/login?error=oauth2_error");
         }
     }

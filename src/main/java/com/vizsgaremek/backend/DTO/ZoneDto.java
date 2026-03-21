@@ -18,4 +18,5 @@ public class ZoneDto implements Serializable {
     Integer hourlyRate;
     @Size(max = 50)
     String mapId;
+    String polygonData;
 }

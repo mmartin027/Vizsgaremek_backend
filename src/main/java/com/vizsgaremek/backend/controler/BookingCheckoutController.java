@@ -36,7 +36,6 @@ public class BookingCheckoutController {
     @Value("${STRIPE.WEBHOOK.SECRET}")
     private String endpointSecret;
 
-    //Ezt hívjuk a frontenden
     @PostMapping("/create-session")
     public ResponseEntity<?> createSession(@RequestBody BookingDto dto, @RequestParam Integer parkingSpotId) {
         try {
@@ -120,7 +119,7 @@ public class BookingCheckoutController {
 
         } catch (Exception e) {
             System.err.println(" WEBHOOK MENTÉSI HIBA TÖRTÉNT ");
-            e.printStackTrace(); // EZ FOGJA KIÍRNI A PONTOS PIROS HIBÁT!
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Hiba: " + e.getMessage());
         }
 

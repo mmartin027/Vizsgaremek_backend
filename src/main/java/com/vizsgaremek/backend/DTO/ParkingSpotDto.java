@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Data
-@NoArgsConstructor // Szükséges a keretrendszereknek
+@NoArgsConstructor
 public class ParkingSpotDto implements Serializable {
 
     private Integer id;
@@ -18,10 +18,9 @@ public class ParkingSpotDto implements Serializable {
     private BigDecimal latitude;
     private BigDecimal longitude;
 
-    // Város és Zóna azonosítók
     private Integer cityId;
     private String cityName;
-    private Integer zoneId;      // ÚJ: Az adatbázis kapcsolathoz
+    private Integer zoneId;
     private String zoneMapId;   // ÚJ: A MapTiler-es összekötéshez
 
     // Típus és zóna megjelenítés

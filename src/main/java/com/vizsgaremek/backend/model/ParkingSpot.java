@@ -1,5 +1,6 @@
 package com.vizsgaremek.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.vizsgaremek.backend.model.City;
 import com.vizsgaremek.backend.model.Zone;
 import jakarta.persistence.*;
@@ -24,12 +25,13 @@ public class ParkingSpot {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private City city;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Zone zone;
-
 
     @Size(max = 200)
     @Column(name = "name", length = 200)

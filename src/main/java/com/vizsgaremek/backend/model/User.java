@@ -45,14 +45,14 @@ public class User {
     @Column(name = "reg_token")
     private String regToken;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    // ÍGY NÉZZEN KI:
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(
             name = "user_x_role",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

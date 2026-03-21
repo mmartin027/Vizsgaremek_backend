@@ -32,5 +32,7 @@ public class Zone {
     @Column(name = "map_id", length = 50)
     private String mapId;
 
+    @Column(columnDefinition = "TEXT")
+    private String polygonData;
 
 }
