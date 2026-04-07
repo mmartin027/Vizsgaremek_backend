@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -28,6 +30,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
     private final PaymentRepository paymentRepository;
+
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -78,11 +81,10 @@ public class BookingService {
 
         User user = null;
 
-        //  Ha a Webhook vagy az Angular küldött explicit userId-t a DTO-ban, azt használjuk!
         if (bookingDto.getUserId() != null) {
             user = userRepository.findById(bookingDto.getUserId().intValue()).orElse(null);
         }
-        //  Ha nincs a DTO-ban userId, akkor megnézzük, be van-e jelentkezve valaki (normál API hívás)
+        //  Ha nincs a DTO-ban userId, akkor megnézzük, be van-e jelentkezve valaki
         else if (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null) {
             String currentUsername = org.springframework.security.core.context.SecurityContextHolder
                     .getContext().getAuthentication().getName();
@@ -92,7 +94,7 @@ public class BookingService {
             }
         }
 
-        // 4. Számítások
+        //  Számítások
         long hours = Duration.between(bookingDto.getStartTime(), bookingDto.getEndTime()).toHours();
         if (hours == 0) hours = 1;
         Integer totalPrice = calculatePrice(parkingSpot, (int) hours);
@@ -106,15 +108,17 @@ public class BookingService {
         booking.setLicensePlate(bookingDto.getLicensePlate());
         booking.setStatus("ACTIVE");
 
-  // 1. Előbb mentjük a booking-ot (mindig!)
         String confirmationCode = generateConfirmationCode();
         booking.setAccessCode(confirmationCode);
+        booking.setCreatedAt(Instant.now());
+        booking.setUpdatedAt(Instant.now());
         bookingRepository.save(booking);
 
   //  Ha van Stripe fizetés, utána mentjük a payment-et
         if (stripePaymentId != null && !stripePaymentId.isEmpty()) {
             Payment payment = new Payment();
             payment.setBooking(booking);
+            payment.setUser(user);
             payment.setTransactionId(stripePaymentId);
             payment.setAmount(totalPrice);
             payment.setStatus("SUCCESS");
@@ -129,6 +133,107 @@ public class BookingService {
 
         return confirmationCode;
     }
+
+
+    public Booking startOnDemandParking(BookingDto dto) {
+        // 1. Megkeressük a parkolót (Feltételezem, van egy parkingSpotRepository-d)
+        ParkingSpot spot = parkingSpotRepository.findById(dto.getParkingSpotId())
+                .orElseThrow(() -> new RuntimeException("Parkoló nem található!"));
+
+        // 2. Létrehozzuk az új foglalást
+        Booking booking = new Booking();
+        booking.setParkingSpot(spot);
+
+        if (dto.getUserId() != null) {
+            User user = userRepository.findById(Math.toIntExact(dto.getUserId()))
+                    .orElseThrow(() -> new RuntimeException("Felhasználó nem található!"));
+            booking.setUser(user);
+        }
+
+        booking.setLicensePlate(dto.getLicensePlate());
+        booking.setCarBrand(dto.getCarBrand());
+        booking.setCarModel(dto.getCarModel());
+
+        booking.setParkingType("ON_DEMAND");
+        booking.setStatus("IN_PROGRESS");
+        booking.setCheckInTime(Instant.now());
+
+
+        booking.setStartTime(Instant.now());
+        booking.setEndTime(Instant.now().plus(24, ChronoUnit.HOURS));
+
+        booking.setTotalPrice(0); // Még nem tudjuk az árat, majd a STOP-nál kiderül!
+
+        // Elmentjük az adatbázisba
+        return bookingRepository.save(booking);
+    }
+
+
+
+    public Booking stopOnDemandParking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található!"));
+
+        // Csak akkor állíthatjuk le, ha tényleg folyamatban van!
+        if (!"IN_PROGRESS".equals(booking.getStatus())) {
+            throw new RuntimeException("Ezt a parkolást nem lehet leállítani, mert nincs folyamatban!");
+        }
+
+        booking.setCheckOutTime(Instant.now());
+
+        long elapsedMinutes = ChronoUnit.MINUTES.between(booking.getCheckInTime(), booking.getCheckOutTime());
+        if (elapsedMinutes < 1) elapsedMinutes = 1;
+
+
+        // Lekérjük a te adatbázisodból az hourly_rate mezőt!
+        Integer hourlyRate = booking.getParkingSpot().getHourlyRate();
+
+        if (hourlyRate == null || hourlyRate <= 0) {
+            hourlyRate = 600; // Ha nincs megadva ár, akkor alapértelmezett 600 Ft/órát számolunk
+        }
+        if (hourlyRate == null) hourlyRate = 600; //
+
+        double minuteRate = hourlyRate / 60.0;
+        int calculatedPrice = (int) Math.ceil(elapsedMinutes * minuteRate);
+
+
+        if (calculatedPrice < 300) calculatedPrice = 300;
+
+        booking.setTotalPrice(calculatedPrice);
+
+        booking.setStatus("PENDING_PAYMENT");
+
+        return bookingRepository.save(booking);
+    }
+    @Transactional
+    public void confirmStopParkingPayment(Map<String, String> metadata, String stripePaymentId) {
+        Integer bookingId = Integer.parseInt(metadata.get("bookingId"));
+
+        // 1. Foglalás megkeresése
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található: " + bookingId));
+
+        // 2. Foglalás státuszának frissítése
+        booking.setStatus("COMPLETED");
+        booking.setUpdatedAt(Instant.now());
+        bookingRepository.save(booking);
+
+        // 3. Fizetés elmentése
+        Payment payment = new Payment();
+        payment.setBooking(booking);
+        payment.setUser(booking.getUser());
+        payment.setTransactionId(stripePaymentId);
+        payment.setAmount(booking.getTotalPrice());
+        payment.setStatus("SUCCESS");
+        payment.setPaymentMethod("stripe");
+        payment.setCreatedAt(Instant.now());
+        payment.setUpdatedAt(Instant.now());
+
+        paymentRepository.save(payment);
+        System.out.println("Fizetés sikeresen elmentve a " + bookingId + " azonosítójú foglaláshoz.");
+    }
+
+
     @Transactional
     public void cancelBooking(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)

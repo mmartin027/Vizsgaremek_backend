@@ -35,10 +35,7 @@ public class    JwtFilter  extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            return;
-        }
+
 
         String authHeader  = request.getHeader("Authorization");
         String token = null;
@@ -74,7 +71,11 @@ public class    JwtFilter  extends OncePerRequestFilter {
             }
 
         }
-
+        String path = request.getRequestURI();
+        if (path.equals("/api/checkout/webhook") || path.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
+            return; // Ezzel kilépünk, a JWT ellenőrzés el sem indul!
+        }
         filterChain.doFilter(request, response);
     }
 }

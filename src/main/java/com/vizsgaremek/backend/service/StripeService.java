@@ -1,6 +1,7 @@
 package com.vizsgaremek.backend.service;
 
 import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.vizsgaremek.backend.DTO.BookingDto;
@@ -21,12 +22,18 @@ public class StripeService {
     private final ParkingSpotRepository parkingSpotRepository;
     private final BookingRepository bookingRepository;
 
+    // 1. Létrehozzuk a frontend URL változót
+    private final String frontendUrl;
+
     public StripeService(
-            @Value("${stripe.api.key}") String stripeApiKey,
+            @Value("${stripe.secretKey}") String stripeApiKey,
+            @Value("${app.base-url}") String frontendUrl,
             ParkingSpotRepository parkingSpotRepository,
             BookingRepository bookingRepository) {
+
         this.parkingSpotRepository = parkingSpotRepository;
         this.bookingRepository = bookingRepository;
+        this.frontendUrl = frontendUrl;
         Stripe.apiKey = stripeApiKey;
     }
 
@@ -42,9 +49,8 @@ public class StripeService {
             SessionCreateParams params = SessionCreateParams.builder()
                     .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl("http://localhost:4200/payment-success?session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl("http://localhost:4200/payment-failed")
-                    // METADATA: Ezt kapja meg a Webhook
+                    .setSuccessUrl(this.frontendUrl + "/payment-success?session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(this.frontendUrl + "/payment-failed")
                     .putMetadata("type", "booking")
                     .putMetadata("licensePlate", bookingDto.getLicensePlate())
                     .putMetadata("carBrand", bookingDto.getCarBrand())
@@ -76,6 +82,44 @@ public class StripeService {
         }
     }
 
+    public Map<String, String> createStopSession(Integer bookingId) throws StripeException {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Foglalás nem található!"));
+
+        SessionCreateParams.LineItem.PriceData.ProductData productData =
+                SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                        .setName("Parkolás díja (" + booking.getLicensePlate() + ")")
+                        .setDescription("Perc alapú parkolás lezárása.")
+                        .build();
+
+        SessionCreateParams.LineItem.PriceData priceData =
+                SessionCreateParams.LineItem.PriceData.builder()
+                        .setCurrency("huf")
+                        .setUnitAmount((long) booking.getTotalPrice() * 100)
+                        .setProductData(productData)
+                        .build();
+
+        SessionCreateParams.LineItem lineItem =
+                SessionCreateParams.LineItem.builder()
+                        .setQuantity(1L)
+                        .setPriceData(priceData)
+                        .build();
+
+        SessionCreateParams params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                // Ugyanaz a javítás itt is!
+                .setSuccessUrl(this.frontendUrl + "/payment-success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(this.frontendUrl + "/foglalasaim")
+                .addLineItem(lineItem)
+                .putMetadata("bookingId", String.valueOf(booking.getId()))
+                .putMetadata("type", "STOP_PARKING")
+                .build();
+
+        Session session = Session.create(params);
+
+        return Map.of("sessionId", session.getId(), "url", session.getUrl());
+    }
+
     public Map<String, String> createExtensionSession(Long bookingId, Integer additionalMinutes) {
         try {
             Booking booking = bookingRepository.findById(Math.toIntExact(bookingId))
@@ -86,8 +130,9 @@ public class StripeService {
 
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl("http://localhost:4200/extension-success?session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl("http://localhost:4200/foglalasaim")
+                    // És itt is!
+                    .setSuccessUrl(this.frontendUrl + "/extension-success?session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(this.frontendUrl + "/foglalasaim")
                     .putMetadata("type", "extension")
                     .putMetadata("bookingId", bookingId.toString())
                     .putMetadata("additionalMinutes", additionalMinutes.toString())

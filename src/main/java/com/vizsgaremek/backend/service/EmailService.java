@@ -10,6 +10,9 @@ public class EmailService {
 
     private final JavaMailSender javaMailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
+    private String senderEmail;
+
     public EmailService(JavaMailSender javaMailSender) {
         this.javaMailSender = javaMailSender;
     }
@@ -17,11 +20,10 @@ public class EmailService {
     public void sendSimpleMessage(MailBodyDTO mailBody){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(mailBody.to());
-        message.setFrom("${MAIL_USERNAME}");
+        message.setFrom(senderEmail);
         message.setSubject(mailBody.subject());
         message.setText(mailBody.text());
 
         javaMailSender.send(message);
     }
-
 }

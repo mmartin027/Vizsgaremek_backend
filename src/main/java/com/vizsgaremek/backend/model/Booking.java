@@ -25,11 +25,9 @@ public class Booking {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "start_time", nullable = false)
     private Instant startTime;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "end_time", nullable = false)
     private Instant endTime;
 
@@ -73,17 +71,32 @@ public class Booking {
     @Column(name = "is_extended")
     private Boolean isExtended;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
+    @Column(name = "parking_type", length = 20)
+    private String parkingType;
 
+    @Column(name = "check_in_time")
+    private Instant checkInTime;
 
+    @Column(name = "check_out_time")
+    private Instant checkOutTime;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
 }

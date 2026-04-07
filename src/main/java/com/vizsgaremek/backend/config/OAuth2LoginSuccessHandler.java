@@ -16,13 +16,11 @@ import com.vizsgaremek.backend.repository.RoleRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Set; // Új import!
+import java.util.Set;
 import java.util.UUID;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-
-
 
     @Autowired
     private JwtService jwtService;
@@ -47,11 +45,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 newUser.setUsername(email);
                 newUser.setProvider("GOOGLE");
 
-                // Google profil adatok kinyerése
                 newUser.setFirstName(oAuth2User.getAttribute("given_name"));
                 newUser.setLastName(oAuth2User.getAttribute("family_name"));
 
-                // Kötelező adatbázis mezők kitöltése (hogy a MySQL ne dobjon hibát!)
                 newUser.setGuid(UUID.randomUUID().toString());
                 newUser.setAuthSecret(UUID.randomUUID().toString());
                 newUser.setIsDeleted(false);
@@ -69,15 +65,22 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             UserPrincipal userPrincipal = new UserPrincipal(user);
             String token = jwtService.generateToken(userPrincipal, user.getId());
 
-            String targetUrl = "http://localhost:4200/login-success#token=" + token;
+            String frontendUrl = "https".equals(request.getHeader("X-Forwarded-Proto"))
+                    ? "https://netparkolo.hu"
+                    : "http://localhost:4200";
+
+            String targetUrl = frontendUrl + "/login-success#token=" + token;
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception e) {
-            // MOST MÁR LÁTNI FOGJUK A KONZOLON, HA HIBA VAN!
-            System.err.println(" HIBA A GOOGLE BEJELENTKEZÉS SORÁN:");
+
             e.printStackTrace();
 
-            response.sendRedirect("http://localhost:4200/login?error=oauth2_error");
+            String frontendUrl = "https".equals(request.getHeader("X-Forwarded-Proto"))
+                    ? "https://netparkolo.hu"
+                    : "http://localhost:4200";
+
+            response.sendRedirect(frontendUrl + "/login?error=oauth2_error");
         }
     }
 }

@@ -3,6 +3,7 @@ package com.vizsgaremek.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -64,6 +65,18 @@ public class User {
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
+
+    @Column(name = "vehicle")
+    private  String Vehicle ;
+
+    @Column (name = "is_verified")
+    private Boolean isVerified = false;
+
+    @Column (name = "registrationotphash")
+    private String registrationOtpHash;
+
+    @Column (name = "otp_expiration")
+    private Date otpExpiration;
 
     @Column(name = "register_finished_at")
     private LocalDateTime registerFinishedAt;

@@ -16,7 +16,7 @@ public class ParkingSpotService {
     @Autowired
     private ParkingSpotRepository repository;
 
-    @Value("${app.base-url:http://localhost:8080}")
+    @Value("${app.base-url}")
     private String baseUrl;
 
     public List<ParkingSpotDto> searchByCity(Integer cityId) {

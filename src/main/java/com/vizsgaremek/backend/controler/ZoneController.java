@@ -13,10 +13,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/zones")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Fejlesztés alatt engedélyezz
+@CrossOrigin(origins = "*")
 public class ZoneController {
 
     private final ZoneService zoneService;
+
+    @GetMapping
+    public ResponseEntity<List<ZoneDto>> getAllZones() {
+        return ResponseEntity.ok(zoneService.getAllZones());
+    }
 
     @GetMapping("/map/{mapId}")
     public ResponseEntity<ZoneDto> getZoneByMapId(@PathVariable String mapId) {
@@ -24,28 +29,5 @@ public class ZoneController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
-    @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<List<ZoneDto>> getAllZones() {
-        return ResponseEntity.ok(zoneService.getAllZones());
-    }
-
-    // 2. ÚJ ZÓNA MENTÉSE (Amikor rajzolsz a térképen)
-    @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<ZoneDto> createZone(@RequestBody ZoneDto zoneDto) {
-        ZoneDto savedZone = zoneService.createZone(zoneDto);
-        return ResponseEntity.ok(savedZone);
-    }
-
-    // 3. ZÓNA TÖRLÉSE
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteZone(@PathVariable Integer id) {
-        zoneService.deleteZone(id);
-        return ResponseEntity.ok("Zóna sikeresen törölve!");
-    }
 }
-
 

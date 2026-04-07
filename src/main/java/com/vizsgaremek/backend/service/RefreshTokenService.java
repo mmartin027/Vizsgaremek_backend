@@ -25,7 +25,6 @@ public class RefreshTokenService {
     @Value("${jwt.refresh.expiration}")
     private Long refreshTokenDurationMs;
 
-    // 1. GENERÁLÁS (Bejelentkezéskor hívjuk)
     @Transactional
     public RefreshToken createRefreshToken(String email) {
         User user = userRepository.findByEmail(email)
@@ -42,12 +41,12 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    // 2. KERESÉS AZ ADATBÁZISBAN
+    //  KERESÉS AZ ADATBÁZISBAN
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
     }
 
-    // 3. LEJÁRAT ELLENŐRZÉSE (Frissítéskor hívjuk)
+    //  LEJÁRAT ELLENŐRZÉSE (Frissítéskor hívjuk)
 
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {

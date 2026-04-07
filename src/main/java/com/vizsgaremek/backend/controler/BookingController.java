@@ -14,11 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:4200")
 public class BookingController {
 
     @Autowired
@@ -30,6 +30,7 @@ public class BookingController {
 
         @Autowired
         private BookingMapper bookingMapper;
+
 
 
 
@@ -131,6 +132,16 @@ public class BookingController {
     }
 
 
+    @PostMapping("/start")
+    public ResponseEntity<?> startParking(@RequestBody BookingDto dto) {
+        try {
+            System.out.println("🚨 ÚJ PARKOLÁS INDULT! Rendszám: " + dto.getLicensePlate());
+            Booking newBooking = bookingService.startOnDemandParking(dto);
+            return ResponseEntity.ok(newBooking);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     @PatchMapping("/{bookingId}/extend")
     public ResponseEntity<BookingDto> extendBooking(
             @PathVariable Long bookingId,

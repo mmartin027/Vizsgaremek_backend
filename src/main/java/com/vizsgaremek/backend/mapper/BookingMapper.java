@@ -28,19 +28,18 @@ public class BookingMapper {
         dto.setHours(booking.getHours());
         dto.setTotalPrice(booking.getTotalPrice());
 
-        // Autó adatok
         dto.setLicensePlate(booking.getLicensePlate());
         dto.setCarBrand(booking.getCarBrand());
         dto.setCarModel(booking.getCarModel());
+        dto.setCheckInTime(booking.getCheckInTime());
         dto.setCarColor(booking.getCarColor());
+        dto.setParkingType(booking.getParkingType());
 
-        // Státusz és extra
         dto.setStatus(booking.getStatus());
         dto.setQrCode(booking.getQrCode());
         dto.setAccessCode(booking.getAccessCode());
         dto.setIsExtended(booking.getIsExtended());
 
-        // Időbélyegek
         dto.setCreatedAt(booking.getCreatedAt());
         dto.setUpdatedAt(booking.getUpdatedAt());
         dto.setCancelledAt(booking.getCancelledAt());

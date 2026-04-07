@@ -17,6 +17,10 @@ public class Payment {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @ManyToOne (fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_Id")
+    private User user;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
@@ -49,5 +53,6 @@ public class Payment {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
 
 }

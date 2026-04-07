@@ -21,7 +21,6 @@ import java.util.Random;
 
 @RestController
 @RequestMapping("/forgotPassword")
-@CrossOrigin(origins = "http://localhost:4200")
 public class ForgotPasswordController {
 
     @Autowired
@@ -71,7 +70,6 @@ public class ForgotPasswordController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Felhasználó nem található"));
 
-        // Módosítás: user alapján keresünk nem OTP-vel
         ForgotPassword fp = forgotPasswordRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Érvénytelen kérés"));
 
