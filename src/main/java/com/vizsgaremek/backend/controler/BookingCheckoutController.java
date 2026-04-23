@@ -1,10 +1,12 @@
-package com.vizsgaremek.backend.controler;
+ package com.vizsgaremek.backend.controler;
 
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import com.stripe.param.checkout.SessionCreateParams;
 import com.vizsgaremek.backend.model.Booking;
+import com.vizsgaremek.backend.model.ParkingSpot;
 import com.vizsgaremek.backend.model.Payment;
 import com.vizsgaremek.backend.repository.PaymentRepository;
 import com.vizsgaremek.backend.DTO.BookingDto;
@@ -34,9 +36,10 @@ public class BookingCheckoutController {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    // BIZTONSÁGOS BEOLVASÁS: A kulcs a Linux szerver környezeti változóiból jön!
     @Value("${stripe.webhook}")
     private String endpointSecret;
+
+
 
     @PostMapping("/create-session")
     public ResponseEntity<?> createSession(@RequestBody BookingDto dto, @RequestParam Integer parkingSpotId) {
@@ -44,6 +47,22 @@ public class BookingCheckoutController {
             return ResponseEntity.ok(stripeService.createCheckoutSession(dto, parkingSpotId));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    @PostMapping("/create-subscription-session")
+    public ResponseEntity<?> createSubscriptionSession(
+            @RequestParam Integer parkingSpotId,
+            @RequestParam String subscriptionType,
+            @RequestBody BookingDto bookingDto) {
+        try {
+            System.out.println("Bérlet kérés - spotId: " + parkingSpotId + ", típus: " + subscriptionType + ", rendszám: " + bookingDto.getLicensePlate());
+            return ResponseEntity.ok(stripeService.createSubscriptionSession(parkingSpotId, subscriptionType, bookingDto));
+        } catch (Exception e) {
+            System.out.println("BÉRLET HIBA: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -60,10 +79,8 @@ public class BookingCheckoutController {
     public ResponseEntity<String> handleStripeWebhook(jakarta.servlet.http.HttpServletRequest request, @RequestHeader("Stripe-Signature") String sigHeader) {
 
         try {
-            // Nyers payload biztonságos beolvasása byte-onként
             String payload = new String(request.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
 
-            // Aláírás validálása a titkos kulccsal
             Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
 
             if ("checkout.session.completed".equals(event.getType())) {
@@ -75,7 +92,7 @@ public class BookingCheckoutController {
 
                 // Duplikáció elleni védelem
                 if (stripePaymentId != null && paymentRepository.existsByTransactionId(stripePaymentId)) {
-                    System.out.println("Webhook: Ezt a fizetést már feldolgoztuk. (Duplikált Webhook eldobva: " + stripePaymentId + ")");
+                    System.out.println("Webhook: Ezt a fizetést már feldolgoztuk.");
                     return ResponseEntity.ok("");
                 }
 
@@ -88,7 +105,6 @@ public class BookingCheckoutController {
 
                 String type = metadata.get("type");
 
-                // Fizetés típusának megfelelő feldolgozás
                 if ("booking".equals(type)) {
                     confirmBookingPayment(metadata, stripePaymentId);
                     System.out.println("Webhook: Új parkolás sikeresen elmentve!");
@@ -98,21 +114,32 @@ public class BookingCheckoutController {
                 } else if ("STOP_PARKING".equals(type)) {
                     bookingService.confirmStopParkingPayment(metadata, stripePaymentId);
                     System.out.println("Webhook: On-Demand parkolás sikeresen lezárva!");
+                } else if ("SUBSCRIPTION".equals(type)) {
+                    BookingDto bookingDto = new BookingDto();
+                    bookingDto.setLicensePlate(metadata.get("licensePlate"));
+                    if (metadata.get("userId") != null && !metadata.get("userId").isEmpty()) {
+                        bookingDto.setUserId(Long.parseLong(metadata.get("userId")));
+                    }
+                    Integer parkingSpotId = Integer.parseInt(metadata.get("parkingSpotId"));
+                    String subscriptionType = metadata.get("subscriptionType");
+                    bookingService.createSubscription(parkingSpotId, bookingDto, subscriptionType, stripePaymentId);
+                    System.out.println("Webhook: Bérlet sikeresen létrehozva! Típus: " + subscriptionType);
                 }
             }
             return ResponseEntity.ok("");
 
         } catch (SignatureVerificationException e) {
-            System.err.println("Webhook Hiba: Hibás aláírás! A titkosító ellenőrzés elbukott.");
+            System.err.println("Webhook Hiba: Hibás aláírás!");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Hibás aláírás");
         } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.ok(""); // Párhuzamos mentés esetén nincs teendő
+            return ResponseEntity.ok("");
         } catch (Exception e) {
             System.err.println("Webhook Mentési Hiba Történt!");
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Hiba: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/confirm-payment")
     public ResponseEntity<?> confirmPayment(@RequestParam String sessionId) {
@@ -123,24 +150,27 @@ public class BookingCheckoutController {
             response.put("success", true);
             response.put("message", "Fizetés megerősítve a Stripe rendszere alapján.");
 
+            if (metadata != null) {
+                String type = metadata.get("type");
+
+                if ("extension".equals(type) && metadata.containsKey("bookingId")) {
+                    try { Thread.sleep(600); } catch (InterruptedException ignored) {}
+
+                    Integer bookingId = Integer.parseInt(metadata.get("bookingId"));
+                    Booking booking = bookingService.getBookingById(bookingId);
+
+                    Map<String, Object> bookingData = new HashMap<>();
+                    bookingData.put("endTime", booking.getEndTime().toString());
+                    bookingData.put("hours", booking.getHours());
+                    bookingData.put("totalPrice", booking.getTotalPrice());
+                    response.put("booking", bookingData);
+                }
+            }
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("success", false, "error", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/stop-session")
-    public ResponseEntity<?> stopAndPay(@RequestParam Integer bookingId) {
-        try {
-            bookingService.stopOnDemandParking(bookingId);
-
-            // Generálunk egy Stripe URL-t a kiszámolt összegre
-            Map<String, String> response = stripeService.createStopSession(bookingId);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 

@@ -5,16 +5,20 @@ import com.vizsgaremek.backend.DTO.ZoneDto;
 import com.vizsgaremek.backend.model.Booking;
 import com.vizsgaremek.backend.model.ParkingSpot;
 import com.vizsgaremek.backend.model.User;
+import com.vizsgaremek.backend.model.Zone;
+import com.vizsgaremek.backend.repository.ZoneRepository;
 import com.vizsgaremek.backend.service.AdminService;
 import com.vizsgaremek.backend.service.ZoneService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,8 +29,11 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
-    private final ZoneService zoneService;   // BE KELL INJEKTÁLNI EZT IS!
 
+    @Autowired
+    private ZoneRepository zoneRepository;
+
+    private final ZoneService zoneService;
     public AdminController(ZoneService zoneService,AdminService adminService) {
         this.zoneService = zoneService;
         this.adminService = adminService;
@@ -52,10 +59,12 @@ public class AdminController {
         }
     }
 
-    // Összes foglalás lekérése az Admin Panelhez
     @GetMapping("/bookings")
-    public ResponseEntity<List<Booking>> getAllBookings() {
-        return ResponseEntity.ok(adminService.getAllBookings());
+    public ResponseEntity<Page<Booking>> getAllBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(adminService.getAllBookings(page, size));
     }
 
     @DeleteMapping("/bookings/{id}")
@@ -69,12 +78,55 @@ public class AdminController {
     }
 
 
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
+        try {
+            adminService.deleteUser(id);
+            return ResponseEntity.ok("Felhasználó törölve.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/parking-spots/{id}/features")
+    public ResponseEntity<?> updateFeatures(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        try {
+            String features = body.get("features");
+            return ResponseEntity.ok(adminService.updateParkingSpotFeatures(id, features));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/parking-spots")
     public ResponseEntity<List<ParkingSpot>> getAllParkingSpots() {
         return ResponseEntity.ok(adminService.getAllParkings());
     }
 
-    // Összes felhasználó lekérése az Adminnak
+    @PutMapping("/users/{id}/role")
+    public ResponseEntity<?> updateUserRole(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        try {
+            // Kiszürjük a JSON-ből a "role" értékét (pl. "ADMIN" vagy "USER")
+            String roleName = body.get("role");
+            adminService.updateUserRole(id, roleName);
+            return ResponseEntity.ok("Jogosultság sikeresen módosítva.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/zones/{id}/features")
+    public ResponseEntity<?> updateZoneFeatures(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        Zone zone = zoneRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Zóna nem található ezzel az azonosítóval: " + id));
+
+        zone.setFeatures(body.get("features"));
+        zoneRepository.save(zone);
+
+        return ResponseEntity.ok().build();
+    }
+
+
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());

@@ -6,9 +6,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * DTO for {@link com.vizsgaremek.backend.model.City}
- */
+
 @Value
 public class CityDto implements Serializable {
     Integer id;

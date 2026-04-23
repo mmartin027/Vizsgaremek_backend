@@ -2,12 +2,15 @@ package com.vizsgaremek.backend.config;
 
 import com.vizsgaremek.backend.model.User;
 import com.vizsgaremek.backend.model.UserPrincipal;
+import com.vizsgaremek.backend.model.RefreshToken;
 import com.vizsgaremek.backend.repository.UserRepository;
 import com.vizsgaremek.backend.service.JwtService;
+import com.vizsgaremek.backend.service.RefreshTokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -30,6 +33,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -63,24 +72,21 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             userRepository.save(user);
 
             UserPrincipal userPrincipal = new UserPrincipal(user);
+
+
             String token = jwtService.generateToken(userPrincipal, user.getId());
 
-            String frontendUrl = "https".equals(request.getHeader("X-Forwarded-Proto"))
-                    ? "https://netparkolo.hu"
-                    : "http://localhost:4200";
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getEmail());
 
-            String targetUrl = frontendUrl + "/login-success#token=" + token;
+
+            String targetUrl = baseUrl + "/login-success?token=" + token + "&refreshToken=" + refreshToken.getToken();
+
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception e) {
-
+            System.err.println("HIBA A GOOGLE BEJELENTKEZÉS SORÁN:");
             e.printStackTrace();
-
-            String frontendUrl = "https".equals(request.getHeader("X-Forwarded-Proto"))
-                    ? "https://netparkolo.hu"
-                    : "http://localhost:4200";
-
-            response.sendRedirect(frontendUrl + "/login?error=oauth2_error");
+            response.sendRedirect(baseUrl + "/login?error=oauth2_error");
         }
     }
 }

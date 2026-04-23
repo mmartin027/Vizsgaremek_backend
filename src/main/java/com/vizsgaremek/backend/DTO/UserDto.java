@@ -5,9 +5,7 @@ import lombok.Value;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * DTO for {@link com.vizsgaremek.backend.model.User}
- */
+
 @Value
 public class UserDto implements Serializable {
     private Long id;
@@ -20,4 +18,5 @@ public class UserDto implements Serializable {
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
     private Boolean isDeleted;
+     private String role;
 }

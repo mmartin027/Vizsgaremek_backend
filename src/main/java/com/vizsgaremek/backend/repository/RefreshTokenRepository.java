@@ -11,13 +11,11 @@ import java.util.Optional;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
-    // Megkeresi a tokent a szöveges érték alapján
     Optional<RefreshToken> findByToken(String token);
 
 
     @Transactional
     int deleteByToken(String token);
 
-    // Törli a tokeneket a felhasználó alapján (pl. kijelentkezéskor)
     int deleteByUser(User user);
 }

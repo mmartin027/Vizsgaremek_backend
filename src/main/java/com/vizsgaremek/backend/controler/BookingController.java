@@ -133,15 +133,25 @@ public class BookingController {
 
 
     @PostMapping("/start")
-    public ResponseEntity<?> startParking(@RequestBody BookingDto dto) {
+    public ResponseEntity<?> startOnDemandParking(@RequestBody BookingDto dto) {
         try {
-            System.out.println("🚨 ÚJ PARKOLÁS INDULT! Rendszám: " + dto.getLicensePlate());
-            Booking newBooking = bookingService.startOnDemandParking(dto);
-            return ResponseEntity.ok(newBooking);
+            System.out.println("Parkolás indítás - spotId: " + dto.getParkingSpotId());
+            Booking booking = bookingService.startOnDemandParking(dto);
+            return ResponseEntity.ok(Map.of(
+                    "id", booking.getId(),
+                    "status", booking.getStatus(),
+                    "licensePlate", booking.getLicensePlate(),
+                    "message", "Parkolás sikeresen elindítva!"
+            ));
         } catch (Exception e) {
+            System.out.println("HIBA: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+
+
     @PatchMapping("/{bookingId}/extend")
     public ResponseEntity<BookingDto> extendBooking(
             @PathVariable Long bookingId,

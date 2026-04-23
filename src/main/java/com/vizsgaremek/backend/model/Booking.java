@@ -52,8 +52,8 @@ public class Booking {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
-    @Lob
-    @Column(name = "qr_code")
+
+    @Column(name = "qr_code",columnDefinition = "MEDIUMTEXT")
     private String qrCode;
 
     @Column(name = "access_code", length = 10)

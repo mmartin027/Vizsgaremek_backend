@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vizsgaremek.backend.DTO.ParkingSpotDto;
 import com.vizsgaremek.backend.model.ParkingSpot;
 import com.vizsgaremek.backend.model.Zone;
+import com.vizsgaremek.backend.repository.BookingRepository;
 import com.vizsgaremek.backend.repository.ParkingSpotRepository;
 import com.vizsgaremek.backend.repository.ZoneRepository;
 import com.vizsgaremek.backend.service.ParkingSpotService;
@@ -30,9 +31,19 @@ public class ParkingSpotController {
     @Autowired
     private ZoneRepository zoneRepository;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
     @GetMapping("/search")
-    public ResponseEntity<List<ParkingSpotDto>> search(@RequestParam Integer cityId) {
-        return ResponseEntity.ok(service.searchByCity(cityId));
+    public ResponseEntity<List<ParkingSpotDto>> search(
+            @RequestParam(required = false) Integer cityId,
+            @RequestParam(required = false) String cityName) {
+        if (cityName != null && !cityName.isEmpty()) {
+            return ResponseEntity.ok(service.searchByCity(Integer.valueOf(cityName)));
+        } else if (cityId != null) {
+            return ResponseEntity.ok(service.searchByCity(cityId));
+        }
+        return ResponseEntity.ok(List.of());
     }
 
 
@@ -40,6 +51,8 @@ public class ParkingSpotController {
     public ResponseEntity<ParkingSpotDto> getByIdentifier(@PathVariable String identifier) {
         return ResponseEntity.ok(service.getByIdentifier(identifier));
     }
+
+
 
     @GetMapping("/map-zones")
     public ResponseEntity<?> getMapZones() {
@@ -51,11 +64,28 @@ public class ParkingSpotController {
             geoJson.put("type", "FeatureCollection");
             List<Map<String, Object>> features = new ArrayList<>();
 
+            Set<Integer> processedZoneIds = new HashSet<>();
+
+            List<Object[]> activeCounts = bookingRepository.countActiveBookingsPerSpot();
+            Map<Integer, Long> activeBookingsMap = new HashMap<>();
+            for (Object[] row : activeCounts) {
+                activeBookingsMap.put((Integer) row[0], (Long) row[1]);
+            }
 
             for (Zone zone : zones) {
+                if (processedZoneIds.contains(zone.getId())) {
+                    continue;
+                }
+                processedZoneIds.add(zone.getId());
+
                 if (zone.getPolygonData() == null || zone.getPolygonData().isEmpty()) {
                     continue;
                 }
+
+                ParkingSpot zoneSpot = spots.stream()
+                        .filter(s -> s.getZone() != null && s.getZone().getId().equals(zone.getId()))
+                        .findFirst()
+                        .orElse(null);
 
                 Map<String, Object> feature = new HashMap<>();
                 feature.put("type", "Feature");
@@ -75,12 +105,14 @@ public class ParkingSpotController {
 
                 Map<String, Object> properties = new HashMap<>();
                 properties.put("id", zone.getId());
+                properties.put("spot_id", zoneSpot != null ? zoneSpot.getId() : null);
                 properties.put("name", zone.getName());
                 properties.put("zoneCode", zone.getZoneCode());
                 properties.put("hourlyRate", zone.getHourlyRate());
-                properties.put("mapId", zone.getMapId());
-                properties.put("featureKind", "zone");  // <-- Frontend szűréshez!
+                properties.put("featureKind", "zone");
                 properties.put("parkingType", "ZONE");
+                properties.put("capacity", zoneSpot != null && zoneSpot.getCapacity() != null ? zoneSpot.getCapacity() : 0);
+                properties.put("occupiedSpaces", zoneSpot != null && zoneSpot.getOccupiedSpaces() != null ? zoneSpot.getOccupiedSpaces() : 0);
 
                 feature.put("properties", properties);
                 features.add(feature);
@@ -130,7 +162,7 @@ public class ParkingSpotController {
                 properties.put("rating", spot.getRating());
 
                 int capacity = spot.getCapacity() != null ? spot.getCapacity() : 0;
-                int occupied = spot.getOccupiedSpaces() != null ? spot.getOccupiedSpaces() : 0;
+                long occupied = activeBookingsMap.getOrDefault(spot.getId(), 0L);
                 properties.put("capacity", capacity);
                 properties.put("occupiedSpaces", occupied);
                 properties.put("availableSpaces", Math.max(0, capacity - occupied));

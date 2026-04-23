@@ -1,29 +1,37 @@
 package com.vizsgaremek.backend.service;
 
 import com.vizsgaremek.backend.DTO.MailBodyDTO;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender javaMailSender;
+    @Value("${resend.api.key}")
+    private String resendApiKey;
 
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
-    private String senderEmail;
+    private final String senderEmail = "noreply@netparkolo.hu";
 
-    public EmailService(JavaMailSender javaMailSender) {
-        this.javaMailSender = javaMailSender;
-    }
+    public void sendSimpleMessage(MailBodyDTO mailBody) {
+        Resend resend = new Resend(resendApiKey);
 
-    public void sendSimpleMessage(MailBodyDTO mailBody){
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(mailBody.to());
-        message.setFrom(senderEmail);
-        message.setSubject(mailBody.subject());
-        message.setText(mailBody.text());
+        CreateEmailOptions params = CreateEmailOptions.builder()
+                .from(senderEmail)
+                .to(mailBody.to())
+                .subject(mailBody.subject())
+                .html("<h3>NetParkoló - Jelszó visszaállítás</h3><p>" + mailBody.text() + "</p>")
+                .build();
 
-        javaMailSender.send(message);
+        try {
+            CreateEmailResponse data = resend.emails().send(params);
+            System.out.println("Email sikeresen elküldve a Resenddel! ID: " + data.getId());
+        } catch (ResendException e) {
+            System.err.println("Kritikus hiba az email küldésekor: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

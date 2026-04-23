@@ -65,7 +65,9 @@ public class SecurityConfig {
                                 "/api/parking-spots/**",
                                 "/images/**",
                                 "/api/zones/**",
-                                "/api/checkout/webhook"
+                                "/api/checkout/webhook",
+                                "/api/contact"
+
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/booking/**", "/api/checkout/**").authenticated()

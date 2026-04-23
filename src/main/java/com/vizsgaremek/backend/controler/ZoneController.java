@@ -25,7 +25,7 @@ public class ZoneController {
 
     @GetMapping("/map/{mapId}")
     public ResponseEntity<ZoneDto> getZoneByMapId(@PathVariable String mapId) {
-        return zoneService.getZoneByMapId(mapId)
+        return zoneService.getZoneByZoneCode(mapId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

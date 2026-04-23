@@ -15,12 +15,11 @@ public class ZoneMapper {
                 zone.getName(),
                 zone.getZoneCode(),
                 zone.getHourlyRate(),
-                zone.getMapId(),
-                zone.getPolygonData()
+                zone.getPolygonData(),
+                zone.getFeatures()
         );
     }
 
-    // DTO -> Entitás (Ha majd akarsz zónát létrehozni/módosítani)
     public Zone toEntity(ZoneDto dto) {
         if (dto == null) return null;
 
@@ -29,9 +28,8 @@ public class ZoneMapper {
         zone.setName(dto.getName());
         zone.setZoneCode(dto.getZoneCode());
         zone.setHourlyRate(dto.getHourlyRate());
-        zone.setMapId(dto.getMapId());
         zone.setPolygonData(dto.getPolygonData());
-
+        zone.setFeatures(dto.getFeatures());
         return zone;
     }
 }

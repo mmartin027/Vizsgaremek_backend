@@ -2,7 +2,9 @@ package com.vizsgaremek.backend.service;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
+import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.vizsgaremek.backend.DTO.BookingDto;
 import com.vizsgaremek.backend.model.Booking;
@@ -22,7 +24,6 @@ public class StripeService {
     private final ParkingSpotRepository parkingSpotRepository;
     private final BookingRepository bookingRepository;
 
-    // 1. Létrehozzuk a frontend URL változót
     private final String frontendUrl;
 
     public StripeService(
@@ -107,7 +108,6 @@ public class StripeService {
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                // Ugyanaz a javítás itt is!
                 .setSuccessUrl(this.frontendUrl + "/payment-success?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(this.frontendUrl + "/foglalasaim")
                 .addLineItem(lineItem)
@@ -118,6 +118,49 @@ public class StripeService {
         Session session = Session.create(params);
 
         return Map.of("sessionId", session.getId(), "url", session.getUrl());
+    }
+
+    public Map<String, String> createSubscriptionSession(Integer parkingSpotId, String subscriptionType, BookingDto bookingDto) {
+        try {
+            ParkingSpot spot = parkingSpotRepository.findById(parkingSpotId)
+                    .orElseThrow(() -> new RuntimeException("Parkoló nem található!"));
+
+            long price;
+            String description;
+            if ("MONTHLY".equals(subscriptionType)) {
+                price = spot.getMonthlyRate() != null ? spot.getMonthlyRate() : spot.getHourlyRate() * 24L * 30;
+                description = "Havi bérlet - " + spot.getName();
+            } else {
+                price = spot.getDailyRate() != null ? spot.getDailyRate() : spot.getHourlyRate() * 24L;
+                description = "Napi bérlet - " + spot.getName();
+            }
+
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl(this.frontendUrl + "/payment-success?session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(this.frontendUrl + "/booking/" + parkingSpotId)
+                    .putMetadata("type", "SUBSCRIPTION")
+                    .putMetadata("subscriptionType", subscriptionType)
+                    .putMetadata("parkingSpotId", parkingSpotId.toString())
+                    .putMetadata("licensePlate", bookingDto.getLicensePlate())
+                    .putMetadata("userId", bookingDto.getUserId() != null ? bookingDto.getUserId().toString() : "")
+                    .addLineItem(SessionCreateParams.LineItem.builder()
+                            .setQuantity(1L)
+                            .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                                    .setCurrency("huf")
+                                    .setUnitAmount(price * 100)
+                                    .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                            .setName(description)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build();
+
+            Session session = Session.create(params);
+            return Map.of("sessionId", session.getId(), "url", session.getUrl());
+        } catch (Exception e) {
+            throw new RuntimeException("Stripe hiba: " + e.getMessage());
+        }
     }
 
     public Map<String, String> createExtensionSession(Long bookingId, Integer additionalMinutes) {
@@ -155,6 +198,18 @@ public class StripeService {
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Stripe hiba: " + e.getMessage());
+        }
+    }
+
+    public void createRefund(String paymentIntentId, Integer amount) {
+        try {
+            RefundCreateParams params = RefundCreateParams.builder()
+                    .setPaymentIntent(paymentIntentId)
+                    .setAmount((long) amount * 100) // Stripe fillérben számol
+                    .build();
+            Refund.create(params);
+        } catch (StripeException e) {
+            throw new RuntimeException("Stripe visszatérítés hiba: " + e.getMessage());
         }
     }
 

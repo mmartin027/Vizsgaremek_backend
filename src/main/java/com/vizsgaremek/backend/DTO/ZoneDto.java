@@ -1,22 +1,22 @@
 package com.vizsgaremek.backend.DTO;
 
 import jakarta.validation.constraints.Size;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-/**
- * DTO for {@link com.vizsgaremek.backend.model.Zone}
- */
-@Value
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ZoneDto implements Serializable {
-    Integer id;
+    private Integer id;
     @Size(max = 50)
-    String name;
+    private String name;
     @Size(max = 25)
-    String zoneCode;
-    Integer hourlyRate;
-    @Size(max = 50)
-    String mapId;
-    String polygonData;
+    private String zoneCode;
+    private Integer hourlyRate;
+    private String polygonData;
+    private String features;
 }

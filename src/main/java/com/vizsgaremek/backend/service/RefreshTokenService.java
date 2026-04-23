@@ -30,7 +30,6 @@ public class RefreshTokenService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Felhasználó nem található: " + email));
 
-        // Régi tokenek törlése ugyanattól a usertől
         refreshTokenRepository.deleteByUser(user);
 
         RefreshToken refreshToken = new RefreshToken();
@@ -41,12 +40,10 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    //  KERESÉS AZ ADATBÁZISBAN
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
     }
 
-    //  LEJÁRAT ELLENŐRZÉSE (Frissítéskor hívjuk)
 
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {

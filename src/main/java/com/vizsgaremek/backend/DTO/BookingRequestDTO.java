@@ -21,6 +21,7 @@ public class BookingRequestDTO {
     private String carBrand;
     private String carModel;
     private String carColor;
+    private String qrCode;
 }
 
 

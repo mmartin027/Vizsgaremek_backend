@@ -46,6 +46,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterDto registerDto) {
+        System.out.println("--- TESZT: ANGULARBÓL ÉRKEZETT USERNAME: " + registerDto.getUsername() + " ---");
         if (registerDto.getPassword() == null || registerDto.getPassword().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("A jelszó megadása kötelező!");
         }
@@ -63,7 +64,6 @@ public class UserController {
             // Felhasználó megkeresése
             User user = service.findByUsername(loginDto.getUsername());
 
-            //  Hitelesítés ellenőrzése
             if (!Boolean.TRUE.equals(user.getIsVerified())) {
                 return ResponseEntity.status(401).body("Kérlek erősítsd meg az e-mail címedet a belépéshez!");
             }

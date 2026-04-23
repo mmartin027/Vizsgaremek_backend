@@ -25,7 +25,6 @@ public class JwtService {
     public String generateToken(UserDetails userDetails, Long userId) {
         Map<String, Object> claims = new HashMap<>();
 
-        //  kiszedjük a jogköröket
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
@@ -37,7 +36,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 *15)) // 24 óra
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 *15))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
