@@ -33,4 +33,6 @@ public class Zone {
     @Column(columnDefinition = "TEXT")
     private String polygonData;
 
+
+
 }

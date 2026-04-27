@@ -12,6 +12,7 @@ import com.vizsgaremek.backend.repository.ZoneRepository;
 import com.vizsgaremek.backend.service.ParkingSpotService;
 import com.vizsgaremek.backend.service.ZoneService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,17 +35,25 @@ public class ParkingSpotController {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private ParkingSpotService parkingSpotService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     @GetMapping("/search")
     public ResponseEntity<List<ParkingSpotDto>> search(
             @RequestParam(required = false) Integer cityId,
             @RequestParam(required = false) String cityName) {
         if (cityName != null && !cityName.isEmpty()) {
-            return ResponseEntity.ok(service.searchByCity(Integer.valueOf(cityName)));
+            return ResponseEntity.ok(service.searchByCityName(cityName));
         } else if (cityId != null) {
             return ResponseEntity.ok(service.searchByCity(cityId));
         }
         return ResponseEntity.ok(List.of());
     }
+
+
 
 
     @GetMapping("/{identifier}")
@@ -72,6 +81,7 @@ public class ParkingSpotController {
                 activeBookingsMap.put((Integer) row[0], (Long) row[1]);
             }
 
+            // --- 1. CIKLUS: ZÓNÁK (POLIGONOK) FELDOLGOZÁSA ---
             for (Zone zone : zones) {
                 if (processedZoneIds.contains(zone.getId())) {
                     continue;
@@ -114,10 +124,17 @@ public class ParkingSpotController {
                 properties.put("capacity", zoneSpot != null && zoneSpot.getCapacity() != null ? zoneSpot.getCapacity() : 0);
                 properties.put("occupiedSpaces", zoneSpot != null && zoneSpot.getOccupiedSpaces() != null ? zoneSpot.getOccupiedSpaces() : 0);
 
+                if (zoneSpot != null) {
+                    String imageUrl = zoneSpot.getMainImageUrl();
+                    if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.startsWith("http")) {
+                        imageUrl = "/images/" + imageUrl;
+                    }
+                    properties.put("imageUrl", imageUrl);
+                }
+
                 feature.put("properties", properties);
                 features.add(feature);
             }
-
 
             for (ParkingSpot spot : spots) {
                 if (!spot.getIsActive() || spot.getLatitude() == null || spot.getLongitude() == null) {
@@ -144,7 +161,7 @@ public class ParkingSpotController {
                 properties.put("id", spot.getId());
                 properties.put("uuid", spot.getUuid());
                 properties.put("name", spot.getName());
-                properties.put("featureKind", "spot");  // <-- Frontend szűréshez!
+                properties.put("featureKind", "spot");
 
                 if (spot.getZone() != null) {
                     properties.put("zoneName", spot.getZone().getName());
@@ -169,7 +186,7 @@ public class ParkingSpotController {
 
                 String imageUrl = spot.getMainImageUrl();
                 if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.startsWith("http")) {
-                    imageUrl = "http://localhost:8080/images/" + imageUrl;
+                    imageUrl = "/images/" + imageUrl;
                 }
                 properties.put("imageUrl", imageUrl);
 

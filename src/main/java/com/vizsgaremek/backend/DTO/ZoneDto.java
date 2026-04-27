@@ -19,4 +19,6 @@ public class ZoneDto implements Serializable {
     private Integer hourlyRate;
     private String polygonData;
     private String features;
+    private Integer cityId;
+
 }

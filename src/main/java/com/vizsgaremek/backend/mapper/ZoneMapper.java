@@ -9,15 +9,14 @@ public class ZoneMapper {
 
     public ZoneDto toDto(Zone zone) {
         if (zone == null) return null;
-
-        return new ZoneDto(
-                zone.getId(),
-                zone.getName(),
-                zone.getZoneCode(),
-                zone.getHourlyRate(),
-                zone.getPolygonData(),
-                zone.getFeatures()
-        );
+        ZoneDto dto = new ZoneDto();
+        dto.setId(zone.getId());
+        dto.setName(zone.getName());
+        dto.setZoneCode(zone.getZoneCode());
+        dto.setHourlyRate(zone.getHourlyRate());
+        dto.setPolygonData(zone.getPolygonData());
+        dto.setFeatures(zone.getFeatures());
+        return dto;
     }
 
     public Zone toEntity(ZoneDto dto) {

@@ -29,10 +29,7 @@ public class BookingMapper {
         dto.setTotalPrice(booking.getTotalPrice());
 
         dto.setLicensePlate(booking.getLicensePlate());
-        dto.setCarBrand(booking.getCarBrand());
-        dto.setCarModel(booking.getCarModel());
         dto.setCheckInTime(booking.getCheckInTime());
-        dto.setCarColor(booking.getCarColor());
         dto.setParkingType(booking.getParkingType());
 
         dto.setStatus(booking.getStatus());

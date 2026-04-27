@@ -50,7 +50,6 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Intege
 
     List<ParkingSpot> findByAddressContainingIgnoreCaseAndIsActiveTrue(String address);
 
-    List<ParkingSpot> findByTypesContainingIgnoreCaseAndIsActiveTrue(String type);
 
     @Query("SELECT p FROM ParkingSpot p WHERE p.hourlyRate BETWEEN :minRate AND :maxRate AND p.isActive = true")
     List<ParkingSpot> findByHourlyRateBetween(

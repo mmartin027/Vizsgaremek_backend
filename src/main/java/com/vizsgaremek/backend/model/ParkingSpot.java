@@ -61,8 +61,7 @@ public class ParkingSpot {
     private Integer distanceFromCenter;
 
 
-    @Column(name = "types")
-    private String types;
+
 
     @ColumnDefault("'OUTDOOR'")
     @Column(name = "parking_type")

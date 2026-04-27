@@ -49,9 +49,10 @@ public class ParkingSpotDto implements Serializable {
     private Instant updatedAt;
 
     public ParkingSpotDto(Integer id, String uuid, String name, String address, Integer hourlyRate,
-                          String features, String fullImageUrl, String zoneName, String zoneCode,BigDecimal latitude,BigDecimal longitude) {
+                          String features, String fullImageUrl, String zoneName, String zoneCode,
+                          BigDecimal latitude, BigDecimal longitude, Integer cityId, String cityName) {
         this.id = id;
-        this.uuid = uuid; // <-- ÚJ
+        this.uuid = uuid;
         this.name = name;
         this.address = address;
         this.hourlyRate = hourlyRate;
@@ -61,5 +62,7 @@ public class ParkingSpotDto implements Serializable {
         this.zoneCode = zoneCode;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.cityId = cityId;
+        this.cityName = cityName;
     }
 }

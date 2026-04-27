@@ -155,8 +155,6 @@ public class BookingService {
         }
 
         booking.setLicensePlate(dto.getLicensePlate());
-        booking.setCarBrand(dto.getCarBrand());
-        booking.setCarModel(dto.getCarModel());
         booking.setParkingType("ON_DEMAND");
         booking.setStatus("IN_PROGRESS");
         booking.setCheckInTime(Instant.now());
@@ -244,7 +242,7 @@ public class BookingService {
     }
 
     @Transactional
-    public void cancelBooking(Integer bookingId) {
+    public Booking cancelBooking(Integer bookingId) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
         Booking booking = bookingRepository.findById(bookingId)
@@ -285,8 +283,9 @@ public class BookingService {
             parkingSpot.setOccupiedSpaces(parkingSpot.getOccupiedSpaces() - 1);
             parkingSpotRepository.save(parkingSpot);
         }
-    }
 
+        return booking; // <-- 2. VÁLTOZÁS: Visszaadjuk az elmentett foglalást
+    }
     @Transactional
     public String createSubscription(Integer parkingSpotId, BookingDto bookingDto, String subscriptionType, String stripePaymentId) {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId)

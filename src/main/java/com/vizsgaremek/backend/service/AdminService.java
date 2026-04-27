@@ -1,10 +1,7 @@
 package com.vizsgaremek.backend.service;
 
 import com.vizsgaremek.backend.DTO.UserDto;
-import com.vizsgaremek.backend.model.ParkingSpot;
-import com.vizsgaremek.backend.model.Booking;
-import com.vizsgaremek.backend.model.Role;
-import com.vizsgaremek.backend.model.User;
+import com.vizsgaremek.backend.model.*;
 import com.vizsgaremek.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -63,6 +60,10 @@ public class AdminService {
 
         userRepository.save(user);
     }
+
+
+
+
 
     @Transactional
     public void deleteParkingSpot(Integer id) {

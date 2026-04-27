@@ -205,7 +205,7 @@ public class StripeService {
         try {
             RefundCreateParams params = RefundCreateParams.builder()
                     .setPaymentIntent(paymentIntentId)
-                    .setAmount((long) amount * 100) // Stripe fillérben számol
+                    .setAmount((long) amount * 100)
                     .build();
             Refund.create(params);
         } catch (StripeException e) {

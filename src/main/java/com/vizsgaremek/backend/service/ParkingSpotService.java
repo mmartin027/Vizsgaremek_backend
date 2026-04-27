@@ -7,10 +7,10 @@ import com.vizsgaremek.backend.repository.ParkingSpotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.util.HashMap;
-import java.util.Map;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,7 +25,8 @@ public class ParkingSpotService {
     @Value("${app.base-url}")
     private String baseUrl;
 
-
+    @Autowired
+    private ParkingSpotRepository parkingSpotRepository;
 
     private ParkingSpotDto convertToDto(ParkingSpot spot) {
         String fullImageUrl = null;
@@ -49,21 +50,29 @@ public class ParkingSpotService {
                 spot.getZone() != null ? spot.getZone().getName() : null,
                 spot.getZone() != null ? spot.getZone().getZoneCode() : null,
                 spot.getLatitude(),
-                spot.getLongitude()
+                spot.getLongitude(),
+                spot.getCity() != null ? spot.getCity().getId() : null,
+                spot.getCity() != null ? spot.getCity().getName() : null
         );
 
-        // Város név beállítása
-        if (spot.getCity() != null) {
-            dto.setCityName(spot.getCity().getName());
-        }
         dto.setParkingType(spot.getParkingType());
 
+        Integer baseRate = spot.getZone() != null && spot.getZone().getHourlyRate() != null
+                ? spot.getZone().getHourlyRate()
+                : spot.getHourlyRate();
+
+        if (baseRate != null) {
+            int calculatedDaily = (int) (Math.round(baseRate * 7.0 / 100.0) * 100);
+            dto.setDailyRate(spot.getDailyRate() != null ? spot.getDailyRate() : calculatedDaily);
+
+            int calculatedMonthly = (int) (Math.round(baseRate * 40.0 / 100.0) * 100);
+            dto.setMonthlyRate(spot.getMonthlyRate() != null ? spot.getMonthlyRate() : calculatedMonthly);
+        }
 
         int activeBookings = (int) bookingRepository.countActiveBookings(spot.getId());
         dto.setOccupiedSpaces(activeBookings);
 
         if (spot.getZone() != null) {
-
             dto.setCapacity(9999);
             dto.setAvailableSpaces(9999);
         } else {
@@ -74,20 +83,6 @@ public class ParkingSpotService {
 
         return dto;
     }
-    public List<ParkingSpotDto> searchByCity(Integer cityId) {
-        List<ParkingSpot> spots = repository.findByCityIdWithZoneAndCity(cityId);
-
-        List<Object[]> activeCounts = bookingRepository.countActiveBookingsPerSpot();
-        Map<Integer, Long> activeBookingsMap = new HashMap<>();
-        for (Object[] row : activeCounts) {
-            activeBookingsMap.put((Integer) row[0], (Long) row[1]);
-        }
-
-        return spots.stream()
-                .map(spot -> convertToDto(spot, activeBookingsMap))
-                .collect(Collectors.toList());
-    }
-
 
     private ParkingSpotDto convertToDto(ParkingSpot spot, Map<Integer, Long> activeBookingsMap) {
         String fullImageUrl = null;
@@ -111,13 +106,24 @@ public class ParkingSpotService {
                 spot.getZone() != null ? spot.getZone().getName() : null,
                 spot.getZone() != null ? spot.getZone().getZoneCode() : null,
                 spot.getLatitude(),
-                spot.getLongitude()
+                spot.getLongitude(),
+                spot.getCity() != null ? spot.getCity().getId() : null,
+                spot.getCity() != null ? spot.getCity().getName() : null
         );
 
-        if (spot.getCity() != null) {
-            dto.setCityName(spot.getCity().getName());
-        }
         dto.setParkingType(spot.getParkingType());
+
+        Integer baseRate = spot.getZone() != null && spot.getZone().getHourlyRate() != null
+                ? spot.getZone().getHourlyRate()
+                : spot.getHourlyRate();
+
+        if (baseRate != null) {
+            int calculatedDaily = (int) (Math.round(baseRate * 7.0 / 100.0) * 100);
+            dto.setDailyRate(spot.getDailyRate() != null ? spot.getDailyRate() : calculatedDaily);
+
+            int calculatedMonthly = (int) (Math.round(baseRate * 40.0 / 100.0) * 100);
+            dto.setMonthlyRate(spot.getMonthlyRate() != null ? spot.getMonthlyRate() : calculatedMonthly);
+        }
 
         int activeBookings = activeBookingsMap.getOrDefault(spot.getId(), 0L).intValue();
         dto.setOccupiedSpaces(activeBookings);
@@ -133,14 +139,55 @@ public class ParkingSpotService {
 
         return dto;
     }
+
+    public List<ParkingSpotDto> searchByCity(Integer cityId) {
+        List<ParkingSpot> spots = repository.findByCityIdWithZoneAndCity(cityId);
+
+        List<Object[]> activeCounts = bookingRepository.countActiveBookingsPerSpot();
+        Map<Integer, Long> activeBookingsMap = new HashMap<>();
+        for (Object[] row : activeCounts) {
+            activeBookingsMap.put((Integer) row[0], (Long) row[1]);
+        }
+
+        return spots.stream()
+                .map(spot -> convertToDto(spot, activeBookingsMap))
+                .collect(Collectors.toList());
+    }
+
+    public void updateImageUrl(Integer spotId, String fileName) {
+        ParkingSpot spot = parkingSpotRepository.findById(spotId)
+                .orElseThrow(() -> new RuntimeException("A parkoló nem található ezzel az ID-val: " + spotId));
+
+        spot.setMainImageUrl(fileName);
+        parkingSpotRepository.save(spot);
+    }
+
+    public void updatePrice(Integer id, Integer newPrice) {
+        ParkingSpot spot = repository.findById(id).orElseThrow(() -> new RuntimeException("Parkoló nem található!"));
+        spot.setHourlyRate(newPrice);
+        repository.save(spot);
+    }
+
+    public List<ParkingSpotDto> searchByCityName(String cityName) {
+        List<ParkingSpot> spots = repository.findByCity_NameContainingIgnoreCaseAndIsActiveTrue(cityName);
+
+        List<Object[]> activeCounts = bookingRepository.countActiveBookingsPerSpot();
+        Map<Integer, Long> activeBookingsMap = new HashMap<>();
+        for (Object[] row : activeCounts) {
+            activeBookingsMap.put((Integer) row[0], (Long) row[1]);
+        }
+
+        return spots.stream()
+                .map(spot -> convertToDto(spot, activeBookingsMap))
+                .collect(Collectors.toList());
+    }
+
     public ParkingSpotDto getByIdentifier(String identifier) {
         ParkingSpot spot = null;
 
         try {
             Integer id = Integer.parseInt(identifier);
-
             spot = repository.findById(id).orElse(null);
-
 
             if (spot == null) {
                 spot = repository.findFirstByZoneId(id)

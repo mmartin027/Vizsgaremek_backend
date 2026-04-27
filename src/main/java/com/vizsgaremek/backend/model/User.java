@@ -46,7 +46,6 @@ public class User {
     @Column(name = "reg_token")
     private String regToken;
 
-    // ÍGY NÉZZEN KI:
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
     @JoinTable(
             name = "user_x_role",
@@ -66,8 +65,7 @@ public class User {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    @Column(name = "vehicle")
-    private  String Vehicle ;
+
 
     @Column (name = "is_verified")
     private Boolean isVerified = false;

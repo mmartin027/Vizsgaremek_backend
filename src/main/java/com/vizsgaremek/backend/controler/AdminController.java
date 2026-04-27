@@ -6,47 +6,113 @@ import com.vizsgaremek.backend.model.Booking;
 import com.vizsgaremek.backend.model.ParkingSpot;
 import com.vizsgaremek.backend.model.User;
 import com.vizsgaremek.backend.model.Zone;
+import com.vizsgaremek.backend.repository.ParkingSpotRepository;
 import com.vizsgaremek.backend.repository.ZoneRepository;
 import com.vizsgaremek.backend.service.AdminService;
+import com.vizsgaremek.backend.service.ParkingSpotService;
 import com.vizsgaremek.backend.service.ZoneService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
-
-
-    @Autowired
-    private ZoneRepository zoneRepository;
-
+    private final AdminService adminService;
+    private final ParkingSpotService parkingSpotService;
     private final ZoneService zoneService;
-    public AdminController(ZoneService zoneService,AdminService adminService) {
-        this.zoneService = zoneService;
-        this.adminService = adminService;
+    private final ZoneRepository zoneRepository;
+    private final ParkingSpotRepository parkingSpotRepository;
+
+    @Value("${app.upload.dir:uploads/images/}")
+    private String uploadDir;
+
+    private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+
+    private String saveFileLocally(MultipartFile file) throws IOException {
+        if (file.isEmpty()) throw new RuntimeException("A fájl üres!");
+
+        if (!ALLOWED_TYPES.contains(file.getContentType())) {
+            throw new RuntimeException("Csak JPG, PNG és WebP képek engedélyezettek!");
+        }
+
+        String finalDir = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
+        File directory = new File(finalDir);
+        if (!directory.exists()) directory.mkdirs();
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String safeName = UUID.randomUUID().toString() + extension;
+
+        Path filePath = Paths.get(finalDir + safeName);
+        Files.write(filePath, file.getBytes());
+
+        return safeName;
     }
 
-    // Új parkolóhely hozzáadása
-    @PostMapping("/parking-spots")
-    public ResponseEntity<ParkingSpot> createParkingSpot(@RequestBody ParkingSpot parkingSpot) {
-        if (parkingSpot.getOccupiedSpaces() == null) parkingSpot.setOccupiedSpaces(0);
-        return ResponseEntity.ok(adminService.addParkingSpot(parkingSpot));
+    @PostMapping("/parking-spots/{id}/image")
+    public ResponseEntity<?> uploadSpotImage(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = saveFileLocally(file);
+            parkingSpotService.updateImageUrl(id, fileName);
+            return ResponseEntity.ok(Map.of("message", "Parkoló képe sikeresen feltöltve!", "imageUrl", fileName));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Hiba a feltöltés során: " + e.getMessage()));
+        }
     }
 
-    //Parkolóhely törlése
+    @PostMapping("/zones/{id}/image")
+    public ResponseEntity<?> uploadZoneImage(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = saveFileLocally(file);
+            zoneService.updateImageUrl(id, fileName);
+            return ResponseEntity.ok(Map.of("message", "Zóna képe sikeresen feltöltve!", "imageUrl", fileName));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Hiba a feltöltés során: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/parking-spots/{id}/price")
+    public ResponseEntity<?> updateSpotPrice(@PathVariable Integer id, @RequestParam Integer price) {
+        try {
+            parkingSpotService.updatePrice(id, price);
+            return ResponseEntity.ok(Map.of("message", "Parkoló ára sikeresen frissítve!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/zones/{id}/price")
+    public ResponseEntity<?> updateZonePrice(@PathVariable Integer id, @RequestParam Integer price) {
+        try {
+            zoneService.updatePrice(id, price);
+            return ResponseEntity.ok(Map.of("message", "Zóna ára sikeresen frissítve!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/parking-spots/{id}")
     public ResponseEntity<?> deleteParkingSpot(@PathVariable Integer id) {
         try {
@@ -77,7 +143,6 @@ public class AdminController {
         }
     }
 
-
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
         try {
@@ -106,7 +171,6 @@ public class AdminController {
     @PutMapping("/users/{id}/role")
     public ResponseEntity<?> updateUserRole(@PathVariable Integer id, @RequestBody Map<String, String> body) {
         try {
-            // Kiszürjük a JSON-ből a "role" értékét (pl. "ADMIN" vagy "USER")
             String roleName = body.get("role");
             adminService.updateUserRole(id, roleName);
             return ResponseEntity.ok("Jogosultság sikeresen módosítva.");
@@ -126,29 +190,36 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
-
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
     @GetMapping("/zones")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<List<ZoneDto>> getAllZones() {
         return ResponseEntity.ok(zoneService.getAllZones());
     }
 
     @PostMapping("/zones")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<ZoneDto> createZone(@RequestBody ZoneDto zoneDto) {
         return ResponseEntity.ok(zoneService.createZone(zoneDto));
     }
 
+    @PostMapping("/parking-spots")
+    public ResponseEntity<?> createParkingSpot(@RequestBody ParkingSpot parkingSpot) {
+        try {
+
+            ParkingSpot savedSpot = parkingSpotRepository.save(parkingSpot);
+            return ResponseEntity.ok(savedSpot);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Hiba a parkoló mentésekor: " + e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/zones/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> deleteZone(@PathVariable Integer id) {
         zoneService.deleteZone(id);
         return ResponseEntity.ok("Zóna törölve!");
     }
 }
-

@@ -40,14 +40,7 @@ public class Booking {
     @Column(name = "license_plate", length = 20)
     private String licensePlate;
 
-    @Column(name = "car_brand")
-    private String carBrand;
 
-    @Column(name = "car_model")
-    private String carModel;
-
-    @Column(name = "car_color", length = 50)
-    private String carColor;
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
